@@ -36,7 +36,8 @@ def run(args, train_data, valid_data):
         auc, acc,_ , _ = validate(valid_loader, model, args)
 
         ### TODO: model save or early stopping
-        wandb.log({"epoch": epoch, "train_loss": train_loss, "train_auc": train_auc, "train_acc":train_acc,
+        if args.use_wandb:
+            wandb.log({"epoch": epoch, "train_loss": train_loss, "train_auc": train_auc, "train_acc":train_acc,
                   "valid_auc":auc, "valid_acc":acc})
         if auc > best_auc:
             best_auc = auc
@@ -71,7 +72,7 @@ def train(train_loader, model, optimizer, args):
     for step, batch in enumerate(train_loader):
         input = process_batch(batch, args)
         preds = model(input)
-        targets = input[3] # correct
+        targets = input[4] # correct
 
 
         loss = compute_loss(preds, targets)
@@ -115,7 +116,7 @@ def validate(valid_loader, model, args):
         input = process_batch(batch, args)
 
         preds = model(input)
-        targets = input[3] # correct
+        targets = input[4] # correct
 
 
         # predictions
@@ -199,7 +200,7 @@ def get_model(args):
 # 배치 전처리
 def process_batch(batch, args):
 
-    test, question, tag, correct, mask = batch
+    classification, paperNum, problemNum, tag, correct, mask,  = batch
     
     
     # change to float
@@ -215,8 +216,9 @@ def process_batch(batch, args):
     # print(interaction)
     # exit()
     #  test_id, question_id, tag
-    test = ((test + 1) * mask).to(torch.int64)
-    question = ((question + 1) * mask).to(torch.int64)
+    classification = ((classification + 1) * mask).to(torch.int64)
+    paperNum = ((paperNum + 1) * mask).to(torch.int64)
+    problemNum = ((problemNum + 1) * mask).to(torch.int64)
     tag = ((tag + 1) * mask).to(torch.int64)
 
     # gather index
@@ -227,8 +229,9 @@ def process_batch(batch, args):
 
     # device memory로 이동
 
-    test = test.to(args.device)
-    question = question.to(args.device)
+    classification = classification.to(args.device)
+    paperNum = paperNum.to(args.device)
+    problemNum = problemNum.to(args.device)
 
 
     tag = tag.to(args.device)
@@ -238,7 +241,7 @@ def process_batch(batch, args):
     interaction = interaction.to(args.device)
     gather_index = gather_index.to(args.device)
 
-    return (test, question,
+    return (classification, paperNum, problemNum,
             tag, correct, mask,
             interaction, gather_index)
 
