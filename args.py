@@ -16,9 +16,10 @@ def parse_args(mode='train'):
     parser.add_argument('--file_name', default='train_data.csv', type=str, help='train file name')
     
     parser.add_argument('--model_dir', default='models/', type=str, help='model directory')
-    parser.add_argument('--model_name', default='model.pt', type=str, help='model file name')
+    parser.add_argument('--model_name', default='model', type=str, help='model file name')
 
     parser.add_argument('--output_dir', default='output/', type=str, help='output directory')
+    parser.add_argument('--output_file', default='output', type=str, help='output directory')
     parser.add_argument('--test_file_name', default='test_data.csv', type=str, help='test file name')
     
     parser.add_argument('--max_seq_len', default=20, type=int, help='max sequence length')

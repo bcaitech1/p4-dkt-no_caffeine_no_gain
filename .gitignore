@@ -1,0 +1,17 @@
+# no .ipynb_checkpoints
+.ipynb_checkpoints/
+
+# no wandb results
+wandb/
+
+# no asset file
+asset/
+
+# no models file
+models/
+
+# no output file
+output/
+
+# no pycache
+__pycache__
