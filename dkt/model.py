@@ -23,6 +23,7 @@ class LSTM(nn.Module):
         self.hidden_dim = self.args.hidden_dim
         self.n_layers = self.args.n_layers
 
+
         # Embedding 
         # interaction은 현재 correct로 구성되어있다. correct(1, 2) + padding(0)
         self.embedding_interaction = nn.Embedding(3, self.hidden_dim//3)
