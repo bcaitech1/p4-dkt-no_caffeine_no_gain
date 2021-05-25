@@ -8,7 +8,6 @@ import wandb
 def main(args):
     wandb.login()
     
-    
     setSeeds(42) 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     args.device = device
