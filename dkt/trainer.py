@@ -8,7 +8,7 @@ from .optimizer import get_optimizer
 from .scheduler import get_scheduler
 from .criterion import get_criterion
 from .metric import get_metric
-from .model import LSTM
+from .model import LSTM, LSTMATTN, Bert
 
 import wandb
 
