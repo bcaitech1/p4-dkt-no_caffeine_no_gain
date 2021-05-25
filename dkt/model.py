@@ -106,13 +106,14 @@ class LSTMATTN(nn.Module):
 
         # Embedding 
         # interaction은 현재 correct로 구성되어있다. correct(1, 2) + padding(0)
-        self.embedding_interaction = nn.Embedding(3, self.hidden_dim//3)
-        self.embedding_test = nn.Embedding(self.args.n_test + 1, self.hidden_dim//3)
-        self.embedding_question = nn.Embedding(self.args.n_questions + 1, self.hidden_dim//3)
-        self.embedding_tag = nn.Embedding(self.args.n_tag + 1, self.hidden_dim//3)
+        self.embedding_interaction = nn.Embedding(3, self.hidden_dim // 3)
+        self.embedding_classification = nn.Embedding(self.args.n_class + 1, self.hidden_dim // 3)
+        self.embedding_paperNum = nn.Embedding(self.args.n_paper + 1, self.hidden_dim // 3)
+        self.embedding_problemNum = nn.Embedding(self.args.n_problem + 1, self.hidden_dim // 3)
+        self.embedding_tag = nn.Embedding(self.args.n_tag + 1, self.hidden_dim // 3)
 
         # embedding combination projection
-        self.comb_proj = nn.Linear((self.hidden_dim//3)*4, self.hidden_dim)
+        self.comb_proj = nn.Linear((self.hidden_dim//3)*5, self.hidden_dim)
 
         self.lstm = nn.LSTM(self.hidden_dim,
                             self.hidden_dim,
@@ -152,22 +153,23 @@ class LSTMATTN(nn.Module):
 
     def forward(self, input):
 
-        test, question, tag, _, mask, interaction, _ = input
+        classification, paperNum, problemNum, tag, _, mask, interaction, _ = input
 
         batch_size = interaction.size(0)
 
         # Embedding
 
         embed_interaction = self.embedding_interaction(interaction)
-        embed_test = self.embedding_test(test)
-        embed_question = self.embedding_question(question)
+        embed_classification = self.embedding_classification(classification)
+        embed_paperNum = self.embedding_paperNum(paperNum)
+        embed_problemNum = self.embedding_problemNum(problemNum)
         embed_tag = self.embedding_tag(tag)
-        
 
         embed = torch.cat([embed_interaction,
-                           embed_test,
-                           embed_question,
-                           embed_tag,], 2)
+                           embed_classification,
+                           embed_paperNum,
+                           embed_problemNum,
+                           embed_tag, ], 2)
 
         X = self.comb_proj(embed)
 
@@ -202,14 +204,15 @@ class Bert(nn.Module):
         self.n_layers = self.args.n_layers
 
         # Embedding 
-        # interaction은 현재 correct으로 구성되어있다. correct(1, 2) + padding(0)
-        self.embedding_interaction = nn.Embedding(3, self.hidden_dim//3)
-        self.embedding_test = nn.Embedding(self.args.n_test + 1, self.hidden_dim//3)
-        self.embedding_question = nn.Embedding(self.args.n_questions + 1, self.hidden_dim//3)
-        self.embedding_tag = nn.Embedding(self.args.n_tag + 1, self.hidden_dim//3)
+        # interaction은 현재 correct로 구성되어있다. correct(1, 2) + padding(0)
+        self.embedding_interaction = nn.Embedding(3, self.hidden_dim // 3)
+        self.embedding_classification = nn.Embedding(self.args.n_class + 1, self.hidden_dim // 3)
+        self.embedding_paperNum = nn.Embedding(self.args.n_paper + 1, self.hidden_dim // 3)
+        self.embedding_problemNum = nn.Embedding(self.args.n_problem + 1, self.hidden_dim // 3)
+        self.embedding_tag = nn.Embedding(self.args.n_tag + 1, self.hidden_dim // 3)
 
         # embedding combination projection
-        self.comb_proj = nn.Linear((self.hidden_dim//3)*4, self.hidden_dim)
+        self.comb_proj = nn.Linear((self.hidden_dim//3)*5, self.hidden_dim)
 
         # Bert config
         self.config = BertConfig( 
@@ -231,22 +234,23 @@ class Bert(nn.Module):
 
 
     def forward(self, input):
-        test, question, tag, _, mask, interaction, _ = input
+        classification, paperNum, problemNum, tag, _, mask, interaction, _ = input
+
         batch_size = interaction.size(0)
 
         # 신나는 embedding
-        
+
         embed_interaction = self.embedding_interaction(interaction)
-        embed_test = self.embedding_test(test)
-        embed_question = self.embedding_question(question)
+        embed_classification = self.embedding_classification(classification)
+        embed_paperNum = self.embedding_paperNum(paperNum)
+        embed_problemNum = self.embedding_problemNum(problemNum)
         embed_tag = self.embedding_tag(tag)
 
         embed = torch.cat([embed_interaction,
-        
-                           embed_test,
-                           embed_question,
-        
-                           embed_tag,], 2)
+                           embed_classification,
+                           embed_paperNum,
+                           embed_problemNum,
+                           embed_tag, ], 2)
 
         X = self.comb_proj(embed)
 

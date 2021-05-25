@@ -16,7 +16,7 @@ def parse_args(mode='train'):
     parser.add_argument('--file_name', default='train_data.csv', type=str, help='train file name')
     
     parser.add_argument('--model_dir', default='models/', type=str, help='model directory')
-    parser.add_argument('--model_name', default='model', type=str, help='model file name')
+    parser.add_argument('--model_name', default='lstmattn', type=str, help='model file name')
 
     parser.add_argument('--output_dir', default='output/', type=str, help='output directory')
     parser.add_argument('--output_file', default='output', type=str, help='output directory')
