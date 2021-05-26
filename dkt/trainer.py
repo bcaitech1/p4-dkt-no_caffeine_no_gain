@@ -71,7 +71,7 @@ def train(train_loader, model, optimizer, args):
     for step, batch in enumerate(train_loader):
         input = process_batch(batch, args)
         preds = model(input)
-        targets = input[5] # correct
+        targets = input[6] # correct
 
 
         loss = compute_loss(preds, targets)
@@ -115,7 +115,7 @@ def validate(valid_loader, model, args):
         input = process_batch(batch, args)
 
         preds = model(input)
-        targets = input[5] # correct
+        targets = input[6] # correct
 
 
         # predictions
@@ -199,7 +199,8 @@ def get_model(args):
 # 배치 전처리
 def process_batch(batch, args):
 
-    test, question, tag, elapsed, time_bin, correct, mask = batch
+    # test, question, tag, elapsed, time_bin, correct, mask = batch
+    tag, classification, paperNum, problemNum, elapsed, time_bin, correct, mask,  = batch
     
     
     # change to float
@@ -215,9 +216,12 @@ def process_batch(batch, args):
     # print(interaction)
     # exit()
     #  test_id, question_id, tag
-    test = ((test + 1) * mask).to(torch.int64)
-    question = ((question + 1) * mask).to(torch.int64)
+    # test = ((test + 1) * mask).to(torch.int64)
+    # question = ((question + 1) * mask).to(torch.int64)
     tag = ((tag + 1) * mask).to(torch.int64)
+    classification = ((classification + 1) * mask).to(torch.int64)
+    paperNum = ((paperNum + 1) * mask).to(torch.int64)
+    problemNum = ((problemNum + 1) * mask).to(torch.int64)
     elapsed = ((elapsed + 1) * mask).to(torch.int64)
     time_bin = ((time_bin + 1) * mask).to(torch.int64)
 
@@ -229,9 +233,12 @@ def process_batch(batch, args):
 
     # device memory로 이동
 
-    test = test.to(args.device)
-    question = question.to(args.device)
+    # test = test.to(args.device)
+    # question = question.to(args.device)
     tag = tag.to(args.device)
+    classification = classification.to(args.device)
+    paperNum = paperNum.to(args.device)
+    problemNum = problemNum.to(args.device)
     elapsed = elapsed.to(args.device)
     time_bin = time_bin.to(args.device)
 
@@ -241,7 +248,8 @@ def process_batch(batch, args):
     interaction = interaction.to(args.device)
     gather_index = gather_index.to(args.device)
 
-    return (test, question, tag, elapsed, time_bin, correct, mask, interaction, gather_index)
+    # return (test, question, tag, elapsed, time_bin, correct, mask, interaction, gather_index)
+    return tag, classification, paperNum, problemNum, elapsed, time_bin, correct, mask, interaction, gather_index
 
 
 # loss계산하고 parameter update!
