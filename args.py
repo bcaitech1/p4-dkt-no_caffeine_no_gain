@@ -45,8 +45,8 @@ def parse_args(mode='train'):
     parser.add_argument('--use_wandb', default=False, type=bool, help='if you want to use wandb')
 
     ### 중요 ###
-    parser.add_argument('--model', default='lstm', type=str, help='model type')
-    parser.add_argument('--optimizer', default='adam', type=str, help='optimizer type')
+    parser.add_argument('--model', default='lstmattn', type=str, help='model type')
+    parser.add_argument('--optimizer', default='adamW', type=str, help='optimizer type')
     parser.add_argument('--scheduler', default='plateau', type=str, help='scheduler type')
     
     args = parser.parse_args()
