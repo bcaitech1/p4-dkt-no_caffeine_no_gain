@@ -45,7 +45,7 @@ def run(args, train_data, valid_data):
             best_auc = auc
             # torch.nn.DataParallel로 감싸진 경우 원래의 model을 가져옵니다.
             model_to_save = model.module if hasattr(model, 'module') else model
-            model_name = args.model + '_' + args.model_name + '_epoch' + str(epoch+1) + ".pt"
+            model_name = args.model + '_' + args.model_name + '_epoch' + str(epoch) + ".pt"
             save_checkpoint({
                 'epoch': epoch + 1,
                 'state_dict': model_to_save.state_dict(),
