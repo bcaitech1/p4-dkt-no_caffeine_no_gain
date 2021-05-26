@@ -71,7 +71,7 @@ def train(train_loader, model, optimizer, args):
     for step, batch in enumerate(train_loader):
         input = process_batch(batch, args)
         preds = model(input)
-        targets = input[3] # correct
+        targets = input[5] # correct
 
 
         loss = compute_loss(preds, targets)
@@ -115,7 +115,7 @@ def validate(valid_loader, model, args):
         input = process_batch(batch, args)
 
         preds = model(input)
-        targets = input[3] # correct
+        targets = input[5] # correct
 
 
         # predictions
@@ -199,7 +199,7 @@ def get_model(args):
 # 배치 전처리
 def process_batch(batch, args):
 
-    test, question, tag, correct, mask = batch
+    test, question, tag, elapsed, time_bin, correct, mask = batch
     
     
     # change to float
@@ -218,6 +218,8 @@ def process_batch(batch, args):
     test = ((test + 1) * mask).to(torch.int64)
     question = ((question + 1) * mask).to(torch.int64)
     tag = ((tag + 1) * mask).to(torch.int64)
+    elapsed = ((elapsed + 1) * mask).to(torch.int64)
+    time_bin = ((time_bin + 1) * mask).to(torch.int64)
 
     # gather index
     # 마지막 sequence만 사용하기 위한 index
@@ -229,18 +231,17 @@ def process_batch(batch, args):
 
     test = test.to(args.device)
     question = question.to(args.device)
-
-
     tag = tag.to(args.device)
+    elapsed = elapsed.to(args.device)
+    time_bin = time_bin.to(args.device)
+
     correct = correct.to(args.device)
     mask = mask.to(args.device)
 
     interaction = interaction.to(args.device)
     gather_index = gather_index.to(args.device)
 
-    return (test, question,
-            tag, correct, mask,
-            interaction, gather_index)
+    return (test, question, tag, elapsed, time_bin, correct, mask, interaction, gather_index)
 
 
 # loss계산하고 parameter update!

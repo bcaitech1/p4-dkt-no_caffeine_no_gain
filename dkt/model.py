@@ -29,9 +29,11 @@ class LSTM(nn.Module):
         self.embedding_test = nn.Embedding(self.args.n_test + 1, self.hidden_dim//3)
         self.embedding_question = nn.Embedding(self.args.n_questions + 1, self.hidden_dim//3)
         self.embedding_tag = nn.Embedding(self.args.n_tag + 1, self.hidden_dim//3)
+        self.embedding_elapsed = nn.Embedding(self.args.n_elapsed + 1, self.hidden_dim//3)
+        self.embedding_time_bin = nn.Embedding(self.args.n_time_bin + 1, self.hidden_dim//3)
 
         # embedding combination projection
-        self.comb_proj = nn.Linear((self.hidden_dim//3)*4, self.hidden_dim)
+        self.comb_proj = nn.Linear((self.hidden_dim//3)*6, self.hidden_dim)
 
         self.lstm = nn.LSTM(self.hidden_dim,
                             self.hidden_dim,
@@ -60,7 +62,7 @@ class LSTM(nn.Module):
 
     def forward(self, input):
 
-        test, question, tag, _, mask, interaction, _ = input
+        test, question, tag, elapsed, time_bin, _, mask, interaction, _ = input
 
         batch_size = interaction.size(0)
 
@@ -70,12 +72,17 @@ class LSTM(nn.Module):
         embed_test = self.embedding_test(test)
         embed_question = self.embedding_question(question)
         embed_tag = self.embedding_tag(tag)
+        embed_elapsed = self.embedding_elapsed(elapsed)
+        embed_time_bin = self.embedding_time_bin(time_bin)
         
 
         embed = torch.cat([embed_interaction,
                            embed_test,
                            embed_question,
-                           embed_tag,], 2)
+                           embed_tag,
+                           embed_elapsed,
+                           embed_time_bin,
+                           ], 2)
 
         X = self.comb_proj(embed)
 
@@ -107,9 +114,11 @@ class LSTMATTN(nn.Module):
         self.embedding_test = nn.Embedding(self.args.n_test + 1, self.hidden_dim//3)
         self.embedding_question = nn.Embedding(self.args.n_questions + 1, self.hidden_dim//3)
         self.embedding_tag = nn.Embedding(self.args.n_tag + 1, self.hidden_dim//3)
+        self.embedding_elapsed = nn.Embedding(self.args.n_elapsed + 1, self.hidden_dim//3)
+        self.embedding_time_bin = nn.Embedding(self.args.n_time_bin + 1, self.hidden_dim//3)
 
         # embedding combination projection
-        self.comb_proj = nn.Linear((self.hidden_dim//3)*4, self.hidden_dim)
+        self.comb_proj = nn.Linear((self.hidden_dim//3)*6, self.hidden_dim)
 
         self.lstm = nn.LSTM(self.hidden_dim,
                             self.hidden_dim,
@@ -149,7 +158,7 @@ class LSTMATTN(nn.Module):
 
     def forward(self, input):
 
-        test, question, tag, _, mask, interaction, _ = input
+        test, question, tag, elapsed, time_bin, _, mask, interaction, _ = input
 
         batch_size = interaction.size(0)
 
@@ -164,7 +173,10 @@ class LSTMATTN(nn.Module):
         embed = torch.cat([embed_interaction,
                            embed_test,
                            embed_question,
-                           embed_tag,], 2)
+                           embed_tag,
+                           embed_elapsed,
+                           embed_time_bin,
+                           ], 2)
 
         X = self.comb_proj(embed)
 
@@ -204,9 +216,11 @@ class Bert(nn.Module):
         self.embedding_test = nn.Embedding(self.args.n_test + 1, self.hidden_dim//3)
         self.embedding_question = nn.Embedding(self.args.n_questions + 1, self.hidden_dim//3)
         self.embedding_tag = nn.Embedding(self.args.n_tag + 1, self.hidden_dim//3)
+        self.embedding_elapsed = nn.Embedding(self.args.n_elapsed + 1, self.hidden_dim//3)
+        self.embedding_time_bin = nn.Embedding(self.args.n_time_bin + 1, self.hidden_dim//3)
 
         # embedding combination projection
-        self.comb_proj = nn.Linear((self.hidden_dim//3)*4, self.hidden_dim)
+        self.comb_proj = nn.Linear((self.hidden_dim//3)*6, self.hidden_dim)
 
         # Bert config
         self.config = BertConfig( 
@@ -228,7 +242,7 @@ class Bert(nn.Module):
 
 
     def forward(self, input):
-        test, question, tag, _, mask, interaction, _ = input
+        test, question, tag, elapsed, time_bin, _, mask, interaction, _ = input
         batch_size = interaction.size(0)
 
         # 신나는 embedding
@@ -237,13 +251,16 @@ class Bert(nn.Module):
         embed_test = self.embedding_test(test)
         embed_question = self.embedding_question(question)
         embed_tag = self.embedding_tag(tag)
+        embed_elapsed = self.embed_elapsed(elapsed)
+        embed_time_bin = self.embed_time_bin(time_bin)
 
         embed = torch.cat([embed_interaction,
-        
                            embed_test,
                            embed_question,
-        
-                           embed_tag,], 2)
+                           embed_tag,
+                           embed_elapsed,
+                           embed_time_bin,
+                           ], 2)
 
         X = self.comb_proj(embed)
 

@@ -40,7 +40,7 @@ class Preprocess:
         np.save(le_path, encoder.classes_)
 
     def __preprocessing(self, df, is_train = True):
-        cate_cols = ['assessmentItemID', 'testId', 'KnowledgeTag']
+        cate_cols = ['assessmentItemID', 'testId', 'KnowledgeTag', 'elapsed', 'time_bin']
 
         if not os.path.exists(self.args.asset_dir):
             os.makedirs(self.args.asset_dir)
@@ -75,7 +75,51 @@ class Preprocess:
         return df
 
     def __feature_engineering(self, df):
-        #TODO
+        df = df.astype({'Timestamp': 'datetime64[ns]'})
+        diff = df.loc[:, ['userID', 'Timestamp']].groupby('userID').diff().fillna(pd.Timedelta(seconds=0))
+        diff = diff.fillna(pd.Timedelta(seconds=0))
+        diff = diff['Timestamp'].apply(lambda x: x.total_seconds())
+
+        df['elapsed'] = diff
+        
+        tmp = ""
+        idx = []
+        
+        # 오래 걸려요 ㅠㅠ 해결방법을 찾아볼게요 ㅠㅠ
+        for i in df.index:
+            if tmp == df.iloc[i].testId:
+                continue
+            else:
+                tmp = df.iloc[i].testId
+                idx.append(i)
+        
+        df.loc[idx, "elapsed"] = 0
+        df.loc[df.elapsed > 250, "elapsed"] = 0
+        df.loc[df.elapsed == 0, "elapsed"] = df.loc[df.elapsed != 0, "elapsed"].mean()
+        
+        def hours(timestamp):
+            return int(str(timestamp).split()[1].split(":")[0])
+        
+        df["hours"] = df.Timestamp.apply(hours)
+        
+        def time_bin(hours):
+            if 0 <= hours <= 5:
+                # Night
+                return 0
+            elif 6 <= hours <= 11:
+                # Morning
+                return 1
+            elif 12 <= hours <= 17:
+                # Daytime
+                return 2
+            else:
+                # Evening
+                return 3
+            return 999
+        
+        df["time_bin"] = df.hours.apply(time_bin)
+
+        df = df.astype({'Timestamp': 'str'})
         return df
 
     def load_data_from_file(self, file_name, is_train=True):
@@ -90,16 +134,20 @@ class Preprocess:
         self.args.n_questions = len(np.load(os.path.join(self.args.asset_dir,'assessmentItemID_classes.npy')))
         self.args.n_test = len(np.load(os.path.join(self.args.asset_dir,'testId_classes.npy')))
         self.args.n_tag = len(np.load(os.path.join(self.args.asset_dir,'KnowledgeTag_classes.npy')))
+        self.args.n_elapsed = len(np.load(os.path.join(self.args.asset_dir,'elapsed_classes.npy')))
+        self.args.n_time_bin = len(np.load(os.path.join(self.args.asset_dir,'time_bin_classes.npy')))
         
 
 
         df = df.sort_values(by=['userID','Timestamp'], axis=0)
-        columns = ['userID', 'assessmentItemID', 'testId', 'answerCode', 'KnowledgeTag']
+        columns = ['userID', 'assessmentItemID', 'testId', 'KnowledgeTag', 'elapsed', 'time_bin', 'answerCode']
         group = df[columns].groupby('userID').apply(
                 lambda r: (
                     r['testId'].values, 
                     r['assessmentItemID'].values,
                     r['KnowledgeTag'].values,
+                    r['elapsed'].values,
+                    r['time_bin'].values,
                     r['answerCode'].values
                 )
             )
@@ -124,10 +172,10 @@ class DKTDataset(torch.utils.data.Dataset):
         # 각 data의 sequence length
         seq_len = len(row[0])
 
-        test, question, tag, correct = row[0], row[1], row[2], row[3]
+        test, question, tag, elapsed, time_bin, correct = row[0], row[1], row[2], row[3], row[4], row[5]
         
 
-        cate_cols = [test, question, tag, correct]
+        cate_cols = [test, question, tag, elapsed, time_bin, correct]
 
         # max seq len을 고려하여서 이보다 길면 자르고 아닐 경우 그대로 냅둔다
         if seq_len > self.args.max_seq_len:
