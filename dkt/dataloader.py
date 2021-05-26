@@ -75,7 +75,7 @@ class Preprocess:
         return df
 
     def __feature_engineering(self, df):
-        # split testId, assessmentItemID
+        # use 3 features instead testId, asess
         df['classification'] = df['testId'].str[2:3]
         df['paperNum'] = df['testId'].str[-3:]
         df['problemNum'] = df['assessmentItemID'].str[-3:]
