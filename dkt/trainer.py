@@ -12,12 +12,15 @@ from .model import LSTM, LSTMATTN, Bert
 
 import wandb
 
+
 def run(args, train_data, valid_data):
     train_loader, valid_loader = get_loaders(args, train_data, valid_data)
     
     # only when using warmup scheduler
     args.total_steps = int(len(train_loader.dataset) / args.batch_size) * (args.n_epochs)
     args.warmup_steps = args.total_steps // 10
+
+    print(args)
             
     model = get_model(args)
     optimizer = get_optimizer(model, args)
@@ -33,20 +36,21 @@ def run(args, train_data, valid_data):
         train_auc, train_acc, train_loss = train(train_loader, model, optimizer, args)
         
         ### VALID
-        auc, acc,_ , _ = validate(valid_loader, model, args)
+        auc, acc, _ , _, val_loss = validate(valid_loader, model, args)
 
         ### TODO: model save or early stopping
-        wandb.log({"epoch": epoch, "train_loss": train_loss, "train_auc": train_auc, "train_acc":train_acc,
-                  "valid_auc":auc, "valid_acc":acc})
+        wandb.log({"train_loss": train_loss, "train_auc": train_auc, "train_acc":train_acc,
+                  "val_loss": val_loss, "valid_auc":auc, "valid_acc":acc})
         if auc > best_auc:
             best_auc = auc
             # torch.nn.DataParallel로 감싸진 경우 원래의 model을 가져옵니다.
             model_to_save = model.module if hasattr(model, 'module') else model
+            model_name = args.model + '_' + args.model_name + '_epoch' + str(epoch+1) + ".pt"
             save_checkpoint({
                 'epoch': epoch + 1,
                 'state_dict': model_to_save.state_dict(),
                 },
-                 args.model_dir, (args.model_name + ".pt"),
+                 args.model_dir, model_name,
             )
             early_stopping_counter = 0
         else:
@@ -111,12 +115,14 @@ def validate(valid_loader, model, args):
 
     total_preds = []
     total_targets = []
+    losses = []
     for step, batch in enumerate(valid_loader):
         input = process_batch(batch, args)
 
         preds = model(input)
         targets = input[3] # correct
 
+        loss = compute_loss(preds, targets)
 
         # predictions
         preds = preds[:,-1]
@@ -131,16 +137,19 @@ def validate(valid_loader, model, args):
 
         total_preds.append(preds)
         total_targets.append(targets)
+        losses.append(loss)
 
     total_preds = np.concatenate(total_preds)
     total_targets = np.concatenate(total_targets)
 
     # Train AUC / ACC
     auc, acc = get_metric(total_targets, total_preds)
+    loss_avg = sum(losses)/len(losses)
     
+    print(f"Valid Loss: {str(loss_avg)}")
     print(f'VALID AUC : {auc} ACC : {acc}\n')
 
-    return auc, acc, total_preds, total_targets
+    return auc, acc, total_preds, total_targets, loss_avg
 
 
 
@@ -170,7 +179,7 @@ def inference(args, test_data):
             
         total_preds+=list(preds)
 
-    write_path = os.path.join(args.output_dir, (args.output_file + ".csv"))
+    write_path = os.path.join(args.output_dir, (args.model_name + ".csv"))
     if not os.path.exists(args.output_dir):
         os.makedirs(args.output_dir)    
     with open(write_path, 'w', encoding='utf8') as w:

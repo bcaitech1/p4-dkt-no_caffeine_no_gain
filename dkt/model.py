@@ -200,13 +200,13 @@ class Bert(nn.Module):
 
         # Embedding 
         # interaction은 현재 correct으로 구성되어있다. correct(1, 2) + padding(0)
-        self.embedding_interaction = nn.Embedding(3, self.hidden_dim//3)
-        self.embedding_test = nn.Embedding(self.args.n_test + 1, self.hidden_dim//3)
-        self.embedding_question = nn.Embedding(self.args.n_questions + 1, self.hidden_dim//3)
-        self.embedding_tag = nn.Embedding(self.args.n_tag + 1, self.hidden_dim//3)
+        self.embedding_interaction = nn.Embedding(3, self.hidden_dim//4)
+        self.embedding_test = nn.Embedding(self.args.n_test + 1, self.hidden_dim//4)
+        self.embedding_question = nn.Embedding(self.args.n_questions + 1, self.hidden_dim//4)
+        self.embedding_tag = nn.Embedding(self.args.n_tag + 1, self.hidden_dim//4)
 
         # embedding combination projection
-        self.comb_proj = nn.Linear((self.hidden_dim//3)*4, self.hidden_dim)
+        self.comb_proj = nn.Linear((self.hidden_dim//4)*4, self.hidden_dim)
 
         # Bert config
         self.config = BertConfig( 
