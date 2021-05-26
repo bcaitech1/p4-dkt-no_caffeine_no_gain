@@ -21,7 +21,7 @@ class Preprocess:
     def get_test_data(self):
         return self.test_data
 
-    def split_data(self, data, ratio=0.7, shuffle=True, seed=0):
+    def split_data(self, data, ratio=0.8, shuffle=True, seed=0):
         """
         split data into two parts with a given ratio.
         """
