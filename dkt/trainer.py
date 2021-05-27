@@ -72,7 +72,7 @@ def train(train_loader, model, optimizer, args):
     for step, batch in enumerate(train_loader):
         input = process_batch(batch, args)
         preds = model(input)
-        targets = input[4] # correct
+        targets = input[-4] # correct
 
 
         loss = compute_loss(preds, targets)
@@ -116,7 +116,7 @@ def validate(valid_loader, model, args):
         input = process_batch(batch, args)
 
         preds = model(input)
-        targets = input[4] # correct
+        targets = input[-4] # correct
 
 
         # predictions
@@ -200,8 +200,9 @@ def get_model(args):
 # 배치 전처리
 def process_batch(batch, args):
 
-    classification, paperNum, problemNum, tag, correct, mask,  = batch
-    
+    features = batch[:-2]
+    correct = batch[-2]
+    mask = batch[-1]
     
     # change to float
     mask = mask.type(torch.FloatTensor)
@@ -216,10 +217,7 @@ def process_batch(batch, args):
     # print(interaction)
     # exit()
     #  test_id, question_id, tag
-    classification = ((classification + 1) * mask).to(torch.int64)
-    paperNum = ((paperNum + 1) * mask).to(torch.int64)
-    problemNum = ((problemNum + 1) * mask).to(torch.int64)
-    tag = ((tag + 1) * mask).to(torch.int64)
+    features = [((feature + 1) * mask).to(torch.int64) for feature in features]
 
     # gather index
     # 마지막 sequence만 사용하기 위한 index
@@ -228,22 +226,16 @@ def process_batch(batch, args):
 
 
     # device memory로 이동
+    features = [feature.to(args.device) for feature in features]
 
-    classification = classification.to(args.device)
-    paperNum = paperNum.to(args.device)
-    problemNum = problemNum.to(args.device)
-
-
-    tag = tag.to(args.device)
     correct = correct.to(args.device)
     mask = mask.to(args.device)
-
     interaction = interaction.to(args.device)
     gather_index = gather_index.to(args.device)
 
-    return (classification, paperNum, problemNum,
-            tag, correct, mask,
-            interaction, gather_index)
+    output = tuple(features + [correct, mask, interaction, gather_index])
+
+    return output
 
 
 # loss계산하고 parameter update!

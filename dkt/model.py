@@ -18,6 +18,7 @@ class LSTM(nn.Module):
     def __init__(self, args):
         super(LSTM, self).__init__()
         self.args = args
+        self.d = vars(self.args)        # Namespace를 dictionary 형태로
         self.device = args.device
 
         self.hidden_dim = self.args.hidden_dim
@@ -25,14 +26,20 @@ class LSTM(nn.Module):
 
         # Embedding 
         # interaction은 현재 correct로 구성되어있다. correct(1, 2) + padding(0)
-        self.embedding_interaction = nn.Embedding(3, self.hidden_dim//3)
-        self.embedding_classification = nn.Embedding(self.args.n_class + 1, self.hidden_dim//3)
-        self.embedding_paperNum = nn.Embedding(self.args.n_paper + 1, self.hidden_dim//3)
-        self.embedding_problemNum = nn.Embedding(self.args.n_problem + 1, self.hidden_dim//3)
-        self.embedding_tag = nn.Embedding(self.args.n_tag + 1, self.hidden_dim//3)
+        self.embedding_interaction = nn.Embedding(3, self.hidden_dim // 3)
+        self.embedding_features = []
+        for value in self.args.n_embedding_layers:
+            self.embedding_features.append(nn.Embedding(value + 1, self.hidden_dim // 3))
+
+        self.embedding_feature = None
+        #self.embedding_classification = nn.Embedding(self.args.n_class + 1, self.hidden_dim//3)
+        #self.embedding_paperNum = nn.Embedding(self.args.n_paper + 1, self.hidden_dim//3)
+        #self.embedding_problemNum = nn.Embedding(self.args.n_problem + 1, self.hidden_dim//3)
+        #self.embedding_tag = nn.Embedding(self.args.n_tag + 1, self.hidden_dim//3)
 
         # embedding combination projection
-        self.comb_proj = nn.Linear((self.hidden_dim//3)*5, self.hidden_dim)
+        # +1은 interaction
+        self.comb_proj = nn.Linear((self.hidden_dim//3)*(len(self.args.n_embedding_layers)+1), self.hidden_dim)
 
         self.lstm = nn.LSTM(self.hidden_dim,
                             self.hidden_dim,
@@ -61,24 +68,26 @@ class LSTM(nn.Module):
 
     def forward(self, input):
 
-        classification, paperNum, problemNum, tag, _, mask, interaction, _ = input
+        _, mask, interaction, _ = input[-4:]
 
         batch_size = interaction.size(0)
 
         # Embedding
 
         embed_interaction = self.embedding_interaction(interaction)
-        embed_classification = self.embedding_classification(classification)
-        embed_paperNum = self.embedding_paperNum(paperNum)
-        embed_problemNum = self.embedding_problemNum(problemNum)
-        embed_tag = self.embedding_tag(tag)
-        
+        embed_features = []
+        for _input, _embedding_feature in zip(input[:-4], self.embedding_features):
+            self.embedding_feature = _embedding_feature.to(self.args.device)
+            value = self.embedding_feature(_input)
+            embed_features.append(value)
+        #embed_classification = self.embedding_classification(classification)
+        #embed_paperNum = self.embedding_paperNum(paperNum)
+        #embed_problemNum = self.embedding_problemNum(problemNum)
+        #embed_tag = self.embedding_tag(tag)
 
-        embed = torch.cat([embed_interaction,
-                           embed_classification,
-                           embed_paperNum,
-                           embed_problemNum,
-                           embed_tag,], 2)
+        embed_features = [embed_interaction] + embed_features
+
+        embed = torch.cat(embed_features, 2)
 
         X = self.comb_proj(embed)
 
@@ -107,13 +116,14 @@ class LSTMATTN(nn.Module):
         # Embedding 
         # interaction은 현재 correct로 구성되어있다. correct(1, 2) + padding(0)
         self.embedding_interaction = nn.Embedding(3, self.hidden_dim // 3)
-        self.embedding_classification = nn.Embedding(self.args.n_class + 1, self.hidden_dim // 3)
-        self.embedding_paperNum = nn.Embedding(self.args.n_paper + 1, self.hidden_dim // 3)
-        self.embedding_problemNum = nn.Embedding(self.args.n_problem + 1, self.hidden_dim // 3)
-        self.embedding_tag = nn.Embedding(self.args.n_tag + 1, self.hidden_dim // 3)
+        self.embedding_features = []
+        for value in self.args.n_embedding_layers:
+            self.embedding_features.append(nn.Embedding(value + 1, self.hidden_dim // 3))
+
+        self.embedding_feature = None
 
         # embedding combination projection
-        self.comb_proj = nn.Linear((self.hidden_dim//3)*5, self.hidden_dim)
+        self.comb_proj = nn.Linear((self.hidden_dim//3)*(len(self.args.n_embedding_layers)+1), self.hidden_dim)
 
         self.lstm = nn.LSTM(self.hidden_dim,
                             self.hidden_dim,
@@ -153,23 +163,22 @@ class LSTMATTN(nn.Module):
 
     def forward(self, input):
 
-        classification, paperNum, problemNum, tag, _, mask, interaction, _ = input
+        _, mask, interaction, _ = input[-4:]
 
         batch_size = interaction.size(0)
 
         # Embedding
 
         embed_interaction = self.embedding_interaction(interaction)
-        embed_classification = self.embedding_classification(classification)
-        embed_paperNum = self.embedding_paperNum(paperNum)
-        embed_problemNum = self.embedding_problemNum(problemNum)
-        embed_tag = self.embedding_tag(tag)
+        embed_features = []
+        for _input, _embedding_feature in zip(input[:-4], self.embedding_features):
+            self.embedding_feature = _embedding_feature.to(self.args.device)
+            value = self.embedding_feature(_input)
+            embed_features.append(value)
 
-        embed = torch.cat([embed_interaction,
-                           embed_classification,
-                           embed_paperNum,
-                           embed_problemNum,
-                           embed_tag, ], 2)
+        embed_features = [embed_interaction] + embed_features
+
+        embed = torch.cat(embed_features, 2)
 
         X = self.comb_proj(embed)
 
@@ -206,13 +215,14 @@ class Bert(nn.Module):
         # Embedding 
         # interaction은 현재 correct로 구성되어있다. correct(1, 2) + padding(0)
         self.embedding_interaction = nn.Embedding(3, self.hidden_dim // 3)
-        self.embedding_classification = nn.Embedding(self.args.n_class + 1, self.hidden_dim // 3)
-        self.embedding_paperNum = nn.Embedding(self.args.n_paper + 1, self.hidden_dim // 3)
-        self.embedding_problemNum = nn.Embedding(self.args.n_problem + 1, self.hidden_dim // 3)
-        self.embedding_tag = nn.Embedding(self.args.n_tag + 1, self.hidden_dim // 3)
+        self.embedding_features = []
+        for value in self.args.n_embedding_layers:
+            self.embedding_features.append(nn.Embedding(value + 1, self.hidden_dim // 3))
+
+        self.embedding_feature = None
 
         # embedding combination projection
-        self.comb_proj = nn.Linear((self.hidden_dim//3)*5, self.hidden_dim)
+        self.comb_proj = nn.Linear((self.hidden_dim//3)*(len(self.args.n_embedding_layers)+1), self.hidden_dim)
 
         # Bert config
         self.config = BertConfig( 
@@ -234,23 +244,22 @@ class Bert(nn.Module):
 
 
     def forward(self, input):
-        classification, paperNum, problemNum, tag, _, mask, interaction, _ = input
+        _, mask, interaction, _ = input[-4:]
 
         batch_size = interaction.size(0)
 
         # 신나는 embedding
 
         embed_interaction = self.embedding_interaction(interaction)
-        embed_classification = self.embedding_classification(classification)
-        embed_paperNum = self.embedding_paperNum(paperNum)
-        embed_problemNum = self.embedding_problemNum(problemNum)
-        embed_tag = self.embedding_tag(tag)
+        embed_features = []
+        for _input, _embedding_feature in zip(input[:-4], self.embedding_features):
+            self.embedding_feature = _embedding_feature.to(self.args.device)
+            value = self.embedding_feature(_input)
+            embed_features.append(value)
 
-        embed = torch.cat([embed_interaction,
-                           embed_classification,
-                           embed_paperNum,
-                           embed_problemNum,
-                           embed_tag, ], 2)
+        embed_features = [embed_interaction] + embed_features
+
+        embed = torch.cat(embed_features, 2)
 
         X = self.comb_proj(embed)
 
