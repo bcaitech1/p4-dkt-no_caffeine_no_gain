@@ -16,9 +16,11 @@ def parse_args(mode='train'):
     parser.add_argument('--file_name', default='train_data.csv', type=str, help='train file name')
     
     parser.add_argument('--model_dir', default='models/', type=str, help='model directory')
-    parser.add_argument('--model_name', default='model.pt', type=str, help='model file name')
+    parser.add_argument('--model_name', default='', type=str, help='model name')
+    parser.add_argument('--model_epoch', default=0, type=int, help='epoch')
 
     parser.add_argument('--output_dir', default='output/', type=str, help='output directory')
+    parser.add_argument('--output_file', default='output', type=str, help='output directory')
     parser.add_argument('--test_file_name', default='test_data.csv', type=str, help='test file name')
     
     parser.add_argument('--max_seq_len', default=20, type=int, help='max sequence length')
@@ -36,6 +38,7 @@ def parse_args(mode='train'):
     parser.add_argument('--lr', default=0.0001, type=float, help='learning rate')
     parser.add_argument('--clip_grad', default=10, type=int, help='clip grad')
     parser.add_argument('--patience', default=5, type=int, help='for early stopping')
+    parser.add_argument('--valid_ratio', default=0.3, type=float, help='valid ratio')
     
 
     parser.add_argument('--log_steps', default=50, type=int, help='print log per n steps')
@@ -43,7 +46,7 @@ def parse_args(mode='train'):
 
     ### 중요 ###
     parser.add_argument('--model', default='lstm', type=str, help='model type')
-    parser.add_argument('--optimizer', default='adam', type=str, help='optimizer type')
+    parser.add_argument('--optimizer', default='adamW', type=str, help='optimizer type')
     parser.add_argument('--scheduler', default='plateau', type=str, help='scheduler type')
     
     args = parser.parse_args()
