@@ -39,8 +39,8 @@ class Preprocess:
         le_path = os.path.join(self.args.asset_dir, name + '_classes.npy')
         np.save(le_path, encoder.classes_)
 
-    def __preprocessing(self, df, is_train = True):
-        cate_cols = ['assessmentItemID', 'testId', 'KnowledgeTag', 'classification', 'paperNum', 'problemNum']
+    def __preprocessing(self, df, is_train=True):
+        cate_cols = self.args.USE_COLUMN
 
         if not os.path.exists(self.args.asset_dir):
             os.makedirs(self.args.asset_dir)
@@ -75,12 +75,23 @@ class Preprocess:
         return df
 
     def __feature_engineering(self, df):
-        # use 3 features instead testId, asess
+
+        self.args.USERID_COLUMN = ['userID']
+        self.args.ANSWER_COLUMN = ['answerCode']
+        self.args.USE_COLUMN = ['KnowledgeTag', 'classification', 'paperNum', 'problemNum']
+        self.args.EXCLUDE_COLUMN = ['assessmentItemID', 'testId', 'Timestamp']
+
+        # use 3 features instead testId, assessmentItemID
         df['classification'] = df['testId'].str[2:3]
         df['paperNum'] = df['testId'].str[-3:]
         df['problemNum'] = df['assessmentItemID'].str[-3:]
 
+        assert df.head().shape[1] == len(self.args.USERID_COLUMN)+len(self.args.ANSWER_COLUMN)+len(self.args.USE_COLUMN)+len(self.args.EXCLUDE_COLUMN)
+
         return df
+
+    def df_apply_function(self, r):
+        return tuple([r[x].values for x in self.args.ANSWER_COLUMN] + [r[x].values for x in self.args.USE_COLUMN])
 
     def load_data_from_file(self, file_name, is_train=True):
         csv_file_path = os.path.join(self.args.data_dir, file_name)
@@ -89,28 +100,18 @@ class Preprocess:
         df = self.__preprocessing(df, is_train)
 
         # 추후 feature를 embedding할 시에 embedding_layer의 input 크기를 결정할때 사용
-
-                
-        self.args.n_questions = len(np.load(os.path.join(self.args.asset_dir,'assessmentItemID_classes.npy')))
-        self.args.n_test = len(np.load(os.path.join(self.args.asset_dir,'testId_classes.npy')))
-        self.args.n_tag = len(np.load(os.path.join(self.args.asset_dir,'KnowledgeTag_classes.npy')))
-        self.args.n_class = len(np.load(os.path.join(self.args.asset_dir, 'classification_classes.npy')))
-        self.args.n_paper = len(np.load(os.path.join(self.args.asset_dir, 'paperNum_classes.npy')))
-        self.args.n_problem = len(np.load(os.path.join(self.args.asset_dir, 'problemNum_classes.npy')))
+        d = vars(self.args)                     # dictionary로 바꾸고 여기에 저장하면 args가 변경
+        self.args.n_embedding_layers = []       # 나중에 사용할 떄 embedding key들을 저장
+        for idx, val in enumerate(self.args.USE_COLUMN):
+            _name = "n_"+val
+            d[_name] = len(np.load(os.path.join(self.args.asset_dir, val+'_classes.npy')))
+            self.args.n_embedding_layers.append(_name)
 
 
         df = df.sort_values(by=['userID','Timestamp'], axis=0)
-        columns = ['userID', 'assessmentItemID', 'testId', 'answerCode', 'KnowledgeTag', 'classification', 'paperNum', 'problemNum']
+        columns = self.args.USERID_COLUMN+self.args.ANSWER_COLUMN+self.args.USE_COLUMN
         group = df[columns].groupby('userID').apply(
-                lambda r: (
-                    r['testId'].values, 
-                    r['assessmentItemID'].values,
-                    r['KnowledgeTag'].values,
-                    r['answerCode'].values,
-                    r['classification'].values,
-                    r['paperNum'].values,
-                    r['problemNum'].values
-                )
+                self.df_apply_function
             )
 
         return group.values
@@ -132,6 +133,8 @@ class DKTDataset(torch.utils.data.Dataset):
 
         # 각 data의 sequence length
         seq_len = len(row[0])
+
+
 
         _, _, tag, correct, classification, paper, problem = row[0], row[1], row[2], row[3], row[4], row[5], row[6]
         
