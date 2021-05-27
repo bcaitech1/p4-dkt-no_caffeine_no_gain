@@ -30,13 +30,13 @@ def run(args, train_data, valid_data):
     early_stopping_counter = 0
     for epoch in range(args.n_epochs):
 
-        print(f"Start Training: Epoch {epoch + 1}")
+        print(f"Start Training: Epoch {epoch}")
         
         ### TRAIN
         train_auc, train_acc, train_loss = train(train_loader, model, optimizer, args)
         
         ### VALID
-        auc, acc, _ , _, val_loss = validate(valid_loader, model, args)
+        auc, acc, val_loss = validate(valid_loader, model, args)
 
         ### TODO: model save or early stopping
         wandb.log({"train_loss": train_loss, "train_auc": train_auc, "train_acc":train_acc,
@@ -45,12 +45,13 @@ def run(args, train_data, valid_data):
             best_auc = auc
             # torch.nn.DataParallel로 감싸진 경우 원래의 model을 가져옵니다.
             model_to_save = model.module if hasattr(model, 'module') else model
-            model_name = args.model + '_' + args.model_name + '_epoch' + str(epoch) + ".pt"
+            model_dir = os.path.join(args.model_dir, args.model_name)
+            model_name = 'model_epoch' + str(epoch) + ".pt"
             save_checkpoint({
-                'epoch': epoch + 1,
+                'epoch': epoch,
                 'state_dict': model_to_save.state_dict(),
                 },
-                 args.model_dir, model_name,
+                 model_dir, model_name,
             )
             early_stopping_counter = 0
         else:
@@ -149,7 +150,7 @@ def validate(valid_loader, model, args):
     print(f"Valid Loss: {str(loss_avg)}")
     print(f'VALID AUC : {auc} ACC : {acc}\n')
 
-    return auc, acc, total_preds, total_targets, loss_avg
+    return auc, acc, loss_avg
 
 
 
@@ -179,7 +180,7 @@ def inference(args, test_data):
             
         total_preds+=list(preds)
 
-    write_path = os.path.join(args.output_dir, (args.model_name + ".csv"))
+    write_path = os.path.join(args.output_dir, (args.model_name + "_epoch" + str(args.model_epoch) + ".csv"))
     if not os.path.exists(args.output_dir):
         os.makedirs(args.output_dir)    
     with open(write_path, 'w', encoding='utf8') as w:
@@ -284,8 +285,8 @@ def save_checkpoint(state, model_dir, model_filename):
 
 def load_model(args):
     
-    
-    model_path = os.path.join(args.model_dir, (args.model_name + ".pt"))
+    model_dir = os.path.join(args.model_dir, args.model_name)
+    model_path = os.path.join(model_dir, ('model_epoch' + str(args.model_epoch) + ".pt"))
     print("Loading Model from:", model_path)
     load_state = torch.load(model_path)
     model = get_model(args)
