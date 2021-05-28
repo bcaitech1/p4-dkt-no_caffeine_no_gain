@@ -32,7 +32,8 @@ def parse_args(mode='train'):
     parser.add_argument('--n_layers', default=2, type=int, help='number of layers')
     parser.add_argument('--n_heads', default=2, type=int, help='number of heads')
     parser.add_argument('--drop_out', default=0.1, type=float, help='drop out rate')
-    
+    parser.add_argument('--dim_div', default=3, type=int, help='model에서 dimension이 커지는 것을 방지')
+
     # 훈련
     parser.add_argument('--n_epochs', default=20, type=int, help='number of epochs')
     parser.add_argument('--batch_size', default=64, type=int, help='batch size')

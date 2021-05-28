@@ -26,10 +26,10 @@ class LSTM(nn.Module):
 
         # Embedding 
         # interaction은 현재 correct로 구성되어있다. correct(1, 2) + padding(0)
-        self.embedding_interaction = nn.Embedding(3, self.hidden_dim // 3)
+        self.embedding_interaction = nn.Embedding(3, self.hidden_dim // self.args.dim_div)
         self.embedding_features = []
         for value in self.args.n_embedding_layers:
-            self.embedding_features.append(nn.Embedding(value + 1, self.hidden_dim // 3))
+            self.embedding_features.append(nn.Embedding(value + 1, self.hidden_dim // self.args.dim_div))
 
         #self.embedding_classification = nn.Embedding(self.args.n_class + 1, self.hidden_dim//3)
         #self.embedding_paperNum = nn.Embedding(self.args.n_paper + 1, self.hidden_dim//3)
@@ -38,7 +38,7 @@ class LSTM(nn.Module):
 
         # embedding combination projection
         # +1은 interaction
-        self.comb_proj = nn.Linear((self.hidden_dim//3)*(len(self.args.n_embedding_layers)+1), self.hidden_dim)
+        self.comb_proj = nn.Linear((self.hidden_dim//self.args.dim_div)*(len(self.args.n_embedding_layers)+1), self.hidden_dim)
 
         self.lstm = nn.LSTM(self.hidden_dim,
                             self.hidden_dim,
@@ -115,13 +115,13 @@ class LSTMATTN(nn.Module):
 
         # Embedding 
         # interaction은 현재 correct로 구성되어있다. correct(1, 2) + padding(0)
-        self.embedding_interaction = nn.Embedding(3, self.hidden_dim // 3)
+        self.embedding_interaction = nn.Embedding(3, self.hidden_dim // self.args.dim_div)
         self.embedding_features = []
         for value in self.args.n_embedding_layers:
-            self.embedding_features.append(nn.Embedding(value + 1, self.hidden_dim // 3))
+            self.embedding_features.append(nn.Embedding(value + 1, self.hidden_dim // self.args.dim_div))
 
         # embedding combination projection
-        self.comb_proj = nn.Linear((self.hidden_dim//3)*(len(self.args.n_embedding_layers)+1), self.hidden_dim)
+        self.comb_proj = nn.Linear((self.hidden_dim//self.args.dim_div)*(len(self.args.n_embedding_layers)+1), self.hidden_dim)
 
         self.lstm = nn.LSTM(self.hidden_dim,
                             self.hidden_dim,
@@ -213,13 +213,13 @@ class Bert(nn.Module):
 
         # Embedding
         # interaction은 현재 correct로 구성되어있다. correct(1, 2) + padding(0)
-        self.embedding_interaction = nn.Embedding(3, self.hidden_dim // 3)
+        self.embedding_interaction = nn.Embedding(3, self.hidden_dim // self.args.dim_div)
         self.embedding_features = []
         for value in self.args.n_embedding_layers:
-            self.embedding_features.append(nn.Embedding(value + 1, self.hidden_dim // 3))
+            self.embedding_features.append(nn.Embedding(value + 1, self.hidden_dim // self.args.dim_div))
 
         # embedding combination projection
-        self.comb_proj = nn.Linear((self.hidden_dim//3)*(len(self.args.n_embedding_layers)+1), self.hidden_dim)
+        self.comb_proj = nn.Linear((self.hidden_dim//self.args.dim_div)*(len(self.args.n_embedding_layers)+1), self.hidden_dim)
 
         # Bert config
         self.config = BertConfig( 
