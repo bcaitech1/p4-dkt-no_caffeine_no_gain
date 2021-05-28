@@ -42,7 +42,7 @@ class Preprocess:
         np.save(le_path, encoder.classes_)
 
     def __preprocessing(self, df, is_train = True):
-        cate_cols = ['KnowledgeTag', 'classification', 'paperNum', 'problemNum', 'elapsed', 'time_bin']
+        cate_cols = ['KnowledgeTag', 'classification', 'paperNum', 'problemNum']
 
         if not os.path.exists(self.args.asset_dir):
             os.makedirs(self.args.asset_dir)
@@ -121,8 +121,8 @@ class Preprocess:
         self.args.n_class = len(np.load(os.path.join(self.args.asset_dir, 'classification_classes.npy')))
         self.args.n_paper = len(np.load(os.path.join(self.args.asset_dir, 'paperNum_classes.npy')))
         self.args.n_problem = len(np.load(os.path.join(self.args.asset_dir, 'problemNum_classes.npy')))
-        self.args.n_elapsed = len(np.load(os.path.join(self.args.asset_dir, 'elapsed_classes.npy')))
-        self.args.n_time_bin = len(np.load(os.path.join(self.args.asset_dir, 'time_bin_classes.npy')))
+        self.args.n_elapsed = 252
+        self.args.n_time_bin = 5
         
 
 
