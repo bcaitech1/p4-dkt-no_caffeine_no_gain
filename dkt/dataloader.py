@@ -160,9 +160,7 @@ class DKTDataset(torch.utils.data.Dataset):
         # 각 data의 sequence length
         seq_len = len(row[0])
 
-        cate_cols = []
-        for val in row:
-            cate_cols.append(val)
+        cate_cols = [val for val in row]
 
         # max seq len을 고려하여서 이보다 길면 자르고 아닐 경우 그대로 냅둔다
         if seq_len > self.args.max_seq_len:
