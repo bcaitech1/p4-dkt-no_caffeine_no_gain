@@ -81,8 +81,8 @@ class Preprocess:
 
         self.args.USERID_COLUMN = ['userID']
         self.args.ANSWER_COLUMN = ['answerCode']
-        self.args.USE_COLUMN = ['KnowledgeTag', 'classification', 'paperNum', 'problemNum', 'elapsed', 'time_bin', 'hours']
-        self.args.EXCLUDE_COLUMN = ['assessmentItemID', 'testId', 'Timestamp']
+        self.args.USE_COLUMN = ['KnowledgeTag', 'assessmentItemID', 'classification', 'paperNum', 'problemNum', 'elapsed', 'time_bin', 'hours']
+        self.args.EXCLUDE_COLUMN = ['testId', 'Timestamp']
 
         # use 3 features instead testId, assessmentItemID
         df['classification'] = df['testId'].str[2:3]

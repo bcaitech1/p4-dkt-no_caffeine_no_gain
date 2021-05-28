@@ -31,7 +31,6 @@ class LSTM(nn.Module):
         for value in self.args.n_embedding_layers:
             self.embedding_features.append(nn.Embedding(value + 1, self.hidden_dim // 3))
 
-        self.embedding_feature = None
         #self.embedding_classification = nn.Embedding(self.args.n_class + 1, self.hidden_dim//3)
         #self.embedding_paperNum = nn.Embedding(self.args.n_paper + 1, self.hidden_dim//3)
         #self.embedding_problemNum = nn.Embedding(self.args.n_problem + 1, self.hidden_dim//3)
@@ -78,8 +77,8 @@ class LSTM(nn.Module):
 
         embed_features = []
         for _input, _embedding_feature in zip(input[:-4], self.embedding_features):
-            self.embedding_feature = _embedding_feature.to(self.args.device)
-            value = self.embedding_feature(_input)
+            embedding_feature = _embedding_feature.to(self.args.device)
+            value = embedding_feature(_input)
             embed_features.append(value)
         #embed_classification = self.embedding_classification(classification)
         #embed_paperNum = self.embedding_paperNum(paperNum)
@@ -120,8 +119,6 @@ class LSTMATTN(nn.Module):
         self.embedding_features = []
         for value in self.args.n_embedding_layers:
             self.embedding_features.append(nn.Embedding(value + 1, self.hidden_dim // 3))
-
-        self.embedding_feature = None
 
         # embedding combination projection
         self.comb_proj = nn.Linear((self.hidden_dim//3)*(len(self.args.n_embedding_layers)+1), self.hidden_dim)
@@ -174,8 +171,8 @@ class LSTMATTN(nn.Module):
 
         embed_features = []
         for _input, _embedding_feature in zip(input[:-4], self.embedding_features):
-            self.embedding_feature = _embedding_feature.to(self.args.device)
-            value = self.embedding_feature(_input)
+            embedding_feature = _embedding_feature.to(self.args.device)
+            value = embedding_feature(_input)
             embed_features.append(value)
 
         embed_features = [embed_interaction] + embed_features
@@ -221,8 +218,6 @@ class Bert(nn.Module):
         for value in self.args.n_embedding_layers:
             self.embedding_features.append(nn.Embedding(value + 1, self.hidden_dim // 3))
 
-        self.embedding_feature = None
-
         # embedding combination projection
         self.comb_proj = nn.Linear((self.hidden_dim//3)*(len(self.args.n_embedding_layers)+1), self.hidden_dim)
 
@@ -256,8 +251,8 @@ class Bert(nn.Module):
 
         embed_features = []
         for _input, _embedding_feature in zip(input[:-4], self.embedding_features):
-            self.embedding_feature = _embedding_feature.to(self.args.device)
-            value = self.embedding_feature(_input)
+            embedding_feature = _embedding_feature.to(self.args.device)
+            value = embedding_feature(_input)
             embed_features.append(value)
 
         embed_features = [embed_interaction] + embed_features
