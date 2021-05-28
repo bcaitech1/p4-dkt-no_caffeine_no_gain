@@ -21,15 +21,18 @@ class Preprocess:
     def get_test_data(self):
         return self.test_data
 
-    def split_data(self, data, ratio=0.8, shuffle=True, seed=0):
+
+    def split_data(self, data, valid_ratio=0.3, shuffle=True, seed=0):
         """
         split data into two parts with a given ratio.
         """
+        train_ratio = 1 - valid_ratio
+
         if shuffle:
             random.seed(seed) # fix to default seed 0
             random.shuffle(data)
 
-        size = int(len(data) * ratio)
+        size = int(len(data) * train_ratio)
         data_1 = data[:size]
         data_2 = data[size:]
 
@@ -38,6 +41,7 @@ class Preprocess:
     def __save_labels(self, encoder, name):
         le_path = os.path.join(self.args.asset_dir, name + '_classes.npy')
         np.save(le_path, encoder.classes_)
+
 
     def __preprocessing(self, df, is_train=True):
         cate_cols = self.args.USE_COLUMN
@@ -59,7 +63,6 @@ class Preprocess:
                 le.classes_ = np.load(label_path)
                 
                 df[col] = df[col].apply(lambda x: x if x in le.classes_ else 'unknown')
-
             #모든 컬럼이 범주형이라고 가정
             df[col]= df[col].astype(str)
             test = le.transform(df[col])
@@ -78,7 +81,7 @@ class Preprocess:
 
         self.args.USERID_COLUMN = ['userID']
         self.args.ANSWER_COLUMN = ['answerCode']
-        self.args.USE_COLUMN = ['KnowledgeTag', 'classification', 'paperNum', 'problemNum']
+        self.args.USE_COLUMN = ['KnowledgeTag', 'classification', 'paperNum', 'problemNum', 'elapsed', 'time_bin', 'hours']
         self.args.EXCLUDE_COLUMN = ['assessmentItemID', 'testId', 'Timestamp']
 
         # use 3 features instead testId, assessmentItemID
@@ -86,7 +89,32 @@ class Preprocess:
         df['paperNum'] = df['testId'].str[-3:]
         df['problemNum'] = df['assessmentItemID'].str[-3:]
 
-        assert df.head().shape[1] == len(self.args.USERID_COLUMN)+len(self.args.ANSWER_COLUMN)+len(self.args.USE_COLUMN)+len(self.args.EXCLUDE_COLUMN)
+        df = df.astype({'Timestamp': 'datetime64[ns]'})
+        def hours(timestamp):
+            return int(str(timestamp).split()[1].split(":")[0])
+        
+        df["hours"] = df.Timestamp.apply(hours)
+        
+        def time_bin(hours):
+            if 0 <= hours <= 5:
+                # Night
+                return 0
+            elif 6 <= hours <= 11:
+                # Morning
+                return 1
+            elif 12 <= hours <= 17:
+                # Daytime
+                return 2
+            else:
+                # Evening
+                return 3
+            return 999
+        
+        df["time_bin"] = df.hours.apply(time_bin)
+        df = df.astype({'Timestamp': 'str'})
+
+        assert df.head().shape[1] == len(self.args.USERID_COLUMN) + len(self.args.ANSWER_COLUMN) + len(
+            self.args.USE_COLUMN) + len(self.args.EXCLUDE_COLUMN)
 
         return df
 
@@ -98,6 +126,7 @@ class Preprocess:
         df = pd.read_csv(csv_file_path)#, nrows=100000)
         df = self.__feature_engineering(df)
         df = self.__preprocessing(df, is_train)
+        print(len(df.elapsed.unique()), len(df.time_bin.unique()))
 
         # 추후 feature를 embedding할 시에 embedding_layer의 input 크기를 결정할때 사용
         self.args.n_embedding_layers = []       # 나중에 사용할 떄 embedding key들을 저장

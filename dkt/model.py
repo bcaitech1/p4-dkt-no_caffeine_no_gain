@@ -75,6 +75,7 @@ class LSTM(nn.Module):
         # Embedding
 
         embed_interaction = self.embedding_interaction(interaction)
+
         embed_features = []
         for _input, _embedding_feature in zip(input[:-4], self.embedding_features):
             self.embedding_feature = _embedding_feature.to(self.args.device)
@@ -170,6 +171,7 @@ class LSTMATTN(nn.Module):
         # Embedding
 
         embed_interaction = self.embedding_interaction(interaction)
+
         embed_features = []
         for _input, _embedding_feature in zip(input[:-4], self.embedding_features):
             self.embedding_feature = _embedding_feature.to(self.args.device)
@@ -212,7 +214,7 @@ class Bert(nn.Module):
         self.hidden_dim = self.args.hidden_dim
         self.n_layers = self.args.n_layers
 
-        # Embedding 
+        # Embedding
         # interaction은 현재 correct로 구성되어있다. correct(1, 2) + padding(0)
         self.embedding_interaction = nn.Embedding(3, self.hidden_dim // 3)
         self.embedding_features = []
@@ -251,6 +253,7 @@ class Bert(nn.Module):
         # 신나는 embedding
 
         embed_interaction = self.embedding_interaction(interaction)
+
         embed_features = []
         for _input, _embedding_feature in zip(input[:-4], self.embedding_features):
             self.embedding_feature = _embedding_feature.to(self.args.device)
@@ -260,6 +263,7 @@ class Bert(nn.Module):
         embed_features = [embed_interaction] + embed_features
 
         embed = torch.cat(embed_features, 2)
+
 
         X = self.comb_proj(embed)
 
