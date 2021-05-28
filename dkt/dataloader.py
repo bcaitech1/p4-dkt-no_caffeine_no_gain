@@ -42,7 +42,7 @@ class Preprocess:
         np.save(le_path, encoder.classes_)
 
     def __preprocessing(self, df, is_train = True):
-        cate_cols = ['KnowledgeTag', 'classification', 'paperNum', 'problemNum']
+        cate_cols = ['KnowledgeTag', 'classification', 'paperNum', 'problemNum', 'elapsed', 'time_bin']
 
         if not os.path.exists(self.args.asset_dir):
             os.makedirs(self.args.asset_dir)
@@ -110,6 +110,7 @@ class Preprocess:
         df = pd.read_csv(csv_file_path)#, nrows=100000)
         df = self.__feature_engineering(df)
         df = self.__preprocessing(df, is_train)
+        print(len(df.elapsed.unique()), len(df.time_bin.unique()))
 
         # 추후 feature를 embedding할 시에 embedding_layer의 input 크기를 결정할때 사용
 
@@ -120,8 +121,8 @@ class Preprocess:
         self.args.n_class = len(np.load(os.path.join(self.args.asset_dir, 'classification_classes.npy')))
         self.args.n_paper = len(np.load(os.path.join(self.args.asset_dir, 'paperNum_classes.npy')))
         self.args.n_problem = len(np.load(os.path.join(self.args.asset_dir, 'problemNum_classes.npy')))
-        self.args.n_elapsed = 253
-        self.args.n_time_bin = 5
+        self.args.n_elapsed = len(np.load(os.path.join(self.args.asset_dir, 'elapsed_classes.npy')))
+        self.args.n_time_bin = len(np.load(os.path.join(self.args.asset_dir, 'time_bin_classes.npy')))
         
 
 
