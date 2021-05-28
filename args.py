@@ -17,7 +17,7 @@ def parse_args(mode='train'):
     
     parser.add_argument('--model_dir', default='models/', type=str, help='model directory')
 
-    parser.add_argument('--model_name', default='lstm', type=str, help='model file name')
+    parser.add_argument('--model_name', default='', type=str, help='model file name')
     parser.add_argument('--model_epoch', default=0, type=int, help='epoch')
 
     parser.add_argument('--output_dir', default='output/', type=str, help='output directory')
