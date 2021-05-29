@@ -16,7 +16,8 @@ def parse_args(mode='train'):
     parser.add_argument('--file_name', default='train_data_add_elapsed.csv', type=str, help='train file name')
     
     parser.add_argument('--model_dir', default='models/', type=str, help='model directory')
-    parser.add_argument('--model_name', default='', type=str, help='model name')
+
+    parser.add_argument('--model_name', default='', type=str, help='model file name')
     parser.add_argument('--model_epoch', default=0, type=int, help='epoch')
 
     parser.add_argument('--output_dir', default='output/', type=str, help='output directory')
@@ -30,8 +31,9 @@ def parse_args(mode='train'):
     parser.add_argument('--hidden_dim', default=64, type=int, help='hidden dimension size')
     parser.add_argument('--n_layers', default=2, type=int, help='number of layers')
     parser.add_argument('--n_heads', default=2, type=int, help='number of heads')
-    parser.add_argument('--drop_out', default=0.2, type=float, help='drop out rate')
-    
+    parser.add_argument('--drop_out', default=0.1, type=float, help='drop out rate')
+    parser.add_argument('--dim_div', default=3, type=int, help='model에서 dimension이 커지는 것을 방지')
+
     # 훈련
     parser.add_argument('--n_epochs', default=20, type=int, help='number of epochs')
     parser.add_argument('--batch_size', default=64, type=int, help='batch size')
@@ -40,9 +42,11 @@ def parse_args(mode='train'):
     parser.add_argument('--patience', default=5, type=int, help='for early stopping')
     parser.add_argument('--valid_ratio', default=0.3, type=float, help='valid ratio')
     
-
+    # log
     parser.add_argument('--log_steps', default=50, type=int, help='print log per n steps')
-    
+
+    # wandb
+    parser.add_argument('--use_wandb', default=True, type=bool, help='if you want to use wandb')
 
     ### 중요 ###
     parser.add_argument('--model', default='lstm', type=str, help='model type')

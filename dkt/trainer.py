@@ -39,8 +39,10 @@ def run(args, train_data, valid_data):
         auc, acc, val_loss = validate(valid_loader, model, args)
 
         ### TODO: model save or early stopping
-        wandb.log({"train_loss": train_loss, "train_auc": train_auc, "train_acc":train_acc,
-                  "val_loss": val_loss, "valid_auc":auc, "valid_acc":acc})
+        if args.use_wandb:
+            wandb.log({"train_loss": train_loss, "train_auc": train_auc, "train_acc": train_acc,
+                       "val_loss": val_loss, "valid_auc": auc, "valid_acc": acc})
+
         if auc > best_auc:
             best_auc = auc
             # torch.nn.DataParallel로 감싸진 경우 원래의 model을 가져옵니다.
@@ -76,8 +78,8 @@ def train(train_loader, model, optimizer, args):
     for step, batch in enumerate(train_loader):
         input = process_batch(batch, args)
         preds = model(input)
-        targets = input[6] # correct
 
+        targets = input[-4] # correct
 
         loss = compute_loss(preds, targets)
         update_params(loss, model, optimizer, args)
@@ -121,7 +123,8 @@ def validate(valid_loader, model, args):
         input = process_batch(batch, args)
 
         preds = model(input)
-        targets = input[6] # correct
+
+        targets = input[-4] # correct
 
         loss = compute_loss(preds, targets)
 
@@ -209,8 +212,11 @@ def get_model(args):
 # 배치 전처리
 def process_batch(batch, args):
 
-    tag, classification, paperNum, problemNum, elapsed, time_bin, correct, mask,  = batch
-    
+
+    features = batch[:-2]
+    correct = batch[-2]
+    mask = batch[-1]
+
     
     # change to float
     mask = mask.type(torch.FloatTensor)
@@ -225,14 +231,9 @@ def process_batch(batch, args):
     # print(interaction)
     # exit()
     #  test_id, question_id, tag
-    # test = ((test + 1) * mask).to(torch.int64)
-    # question = ((question + 1) * mask).to(torch.int64)
-    tag = ((tag + 1) * mask).to(torch.int64)
-    classification = ((classification + 1) * mask).to(torch.int64)
-    paperNum = ((paperNum + 1) * mask).to(torch.int64)
-    problemNum = ((problemNum + 1) * mask).to(torch.int64)
-    elapsed = ((elapsed + 1) * mask).to(torch.int64)
-    time_bin = ((time_bin + 1) * mask).to(torch.int64)
+
+    features = [((feature + 1) * mask).to(torch.int64) for feature in features]
+
 
     # gather index
     # 마지막 sequence만 사용하기 위한 index
@@ -241,23 +242,18 @@ def process_batch(batch, args):
 
 
     # device memory로 이동
-
-    # test = test.to(args.device)
-    # question = question.to(args.device)
-    tag = tag.to(args.device)
-    classification = classification.to(args.device)
-    paperNum = paperNum.to(args.device)
-    problemNum = problemNum.to(args.device)
-    elapsed = elapsed.to(args.device)
-    time_bin = time_bin.to(args.device)
+    features = [feature.to(args.device) for feature in features]
 
     correct = correct.to(args.device)
     mask = mask.to(args.device)
-
     interaction = interaction.to(args.device)
     gather_index = gather_index.to(args.device)
 
-    return (tag, classification, paperNum, problemNum, elapsed, time_bin, correct, mask, interaction, gather_index)
+
+    output = tuple(features + [correct, mask, interaction, gather_index])
+
+    return output
+
 
 
 # loss계산하고 parameter update!
