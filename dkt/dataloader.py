@@ -141,8 +141,17 @@ class Preprocess:
                     r['answerCode'].values
                 )
             )
+        
+        aug = group.copy()
+        idx = 0
+        for ft in group:
+            for split in range(0, len(ft[0]) - (len(ft[0]%self.args.max_seq_len)), self.args.max_seq_len-1):
+                aug.loc[idx] = tuple([ft[0][split:split+self.args.max_seq_len], ft[1][split:split+self.args.max_seq_len], ft[2][split:split+self.args.max_seq_len], ft[3][split:split+20]])
+                idx += 1
 
-        return group.values
+#        return group.values
+        return aug.values
+
 
     def load_train_data(self, file_name):
         self.train_data = self.load_data_from_file(file_name)
