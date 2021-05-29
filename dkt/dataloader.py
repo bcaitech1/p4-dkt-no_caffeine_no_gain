@@ -7,6 +7,8 @@ import random
 from sklearn.preprocessing import LabelEncoder
 import numpy as np
 import torch
+import pickle
+from tqdm import tqdm
 
 class Preprocess:
     def __init__(self,args):
@@ -78,6 +80,16 @@ class Preprocess:
     def __feature_engineering(self, df):
         df['classification'] = df['testId'].str[2:3]
         df['paperNum'] = df['testId'].str[-3:]
+        # for i in range(len(df)):
+        #     if df['paperNum'][i] in [0, '000', '0']:
+        #         print(df['testId'][i])
+        #         exit()
+        # print("no problem")
+        # print(df['paperNum'])
+        # print(df['paperNum'].item())
+        # if df['paperNum'] == 0 or df['paperNum'] == "0":
+        #     print(df['testId'])
+        #     exit()
         df['problemNum'] = df['assessmentItemID'].str[-3:]
 
         df = df.astype({'Timestamp': 'datetime64[ns]'})
@@ -121,7 +133,7 @@ class Preprocess:
         self.args.n_class = len(np.load(os.path.join(self.args.asset_dir, 'classification_classes.npy')))
         self.args.n_paper = len(np.load(os.path.join(self.args.asset_dir, 'paperNum_classes.npy')))
         self.args.n_problem = len(np.load(os.path.join(self.args.asset_dir, 'problemNum_classes.npy')))
-        self.args.n_elapsed = 252
+        self.args.n_elapsed = 253
         self.args.n_time_bin = 5
         
 
@@ -142,14 +154,40 @@ class Preprocess:
                 )
             )
         
-        aug = group.copy()
-        idx = 0
-        for ft in group:
-            for split in range(0, len(ft[0]) - (len(ft[0]%self.args.max_seq_len)), self.args.max_seq_len-1):
-                aug.loc[idx] = tuple([ft[0][split:split+self.args.max_seq_len], ft[1][split:split+self.args.max_seq_len], ft[2][split:split+self.args.max_seq_len], ft[3][split:split+20]])
-                idx += 1
+        splited_file_name = file_name.split('.')[0] + '_splited' + '.pkl'
+        splited_file_path = os.path.join(self.args.data_dir, splited_file_name)
+        if os.path.exists(splited_file_path):
+            aug = pd.read_pickle(splited_file_path)
+            print(f"{splited_file_name} is loaded!")
+        else:
+            print("There is no splited data.")
+            aug = group.copy()
+            idx = 0
+            n_col = len(columns)-1
+            for ft in tqdm(group):
+                total = len(ft[0])
+                quot, rem = total//self.args.max_seq_len, total%self.args.max_seq_len
+                
+                if rem != 0:
+                    first = np.zeros((n_col, self.args.max_seq_len), dtype=np.int16)
+                    for c in range(n_col):
+                        first[c][-rem:] = ft[c][:rem]
+                    aug.loc[idx] = tuple(first)
+                    idx += 1
 
-#        return group.values
+                for q in range(quot):
+                    row = []
+                    for c in range(n_col):
+                        row.append(ft[c][rem+q*self.args.max_seq_len : rem+(q+1)*self.args.max_seq_len])
+                    aug.loc[idx] = tuple(row)
+                    print(f"tuple(row) : {tuple(row)}")
+                    exit()
+                    idx += 1
+                
+            aug.to_pickle(splited_file_path)
+            print(f"{splited_file_name} is saved!")
+
+        print(f"aug len is {len(aug)}")
         return aug.values
 
 
@@ -170,6 +208,8 @@ class DKTDataset(torch.utils.data.Dataset):
 
         # 각 data의 sequence length
         seq_len = len(row[0])
+        print(f"seq_len : {seq_len}")
+        print(f"row : {row}")
 
         tag, classification, paper, problem, elapsed, time_bin, correct = row[0], row[1], row[2], row[3], row[4], row[5], row[6]
 
@@ -203,6 +243,12 @@ def collate(batch):
     col_n = len(batch[0])
     col_list = [[] for _ in range(col_n)]
     max_seq_len = len(batch[0][-1])
+    # print(batch)
+    print(f"batch : {type(batch), len(batch)}")
+    print(f"batch[0] : {type(batch[0]), len(batch[0])}")
+    print(batch[0])
+    print(f"batch[0][0] : {type(batch[0][0]), len(batch[0][0])}")
+    exit()
 
         
     # batch의 값들을 각 column끼리 그룹화
@@ -221,7 +267,7 @@ def collate(batch):
 
 def get_loaders(args, train, valid):
 
-    pin_memory = False
+    pin_memory = True
     train_loader, valid_loader = None, None
     
     if train is not None:
