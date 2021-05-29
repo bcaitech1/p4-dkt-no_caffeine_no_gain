@@ -30,9 +30,9 @@ for i in tqdm(train_df.index):
         tmp = train_df.loc[i, "testId"]
         idx.append(i)
 
-train_df.loc[idx, "elapsed"] = 0
-train_df.loc[train_df.elapsed > 250, "elapsed"] = 0
-train_df.loc[train_df.elapsed == 0, "elapsed"] = train_df.loc[train_df.elapsed != 0, "elapsed"].mean()
+train_df.loc[idx, "elapsed"] = -1
+train_df.loc[train_df.elapsed > 250, "elapsed"] = -1
+train_df.loc[train_df.elapsed == -1, "elapsed"] = train_df.loc[train_df.elapsed != -1, "elapsed"].mean()
 train_df.to_csv("/opt/ml/input/data/train_dataset/train_data_add_elapsed.csv", index=False)
 
 dtype = {
@@ -64,7 +64,7 @@ for i in tqdm(test_df.index):
         tmp = test_df.loc[i, "testId"]
         idx.append(i)
 
-test_df.loc[idx, "elapsed"] = 0
-test_df.loc[test_df.elapsed > 250, "elapsed"] = 0
-test_df.loc[test_df.elapsed == 0, "elapsed"] = test_df.loc[test_df.elapsed != 0, "elapsed"].mean()
+test_df.loc[idx, "elapsed"] = -1
+test_df.loc[test_df.elapsed > 250, "elapsed"] = -1
+test_df.loc[test_df.elapsed == -1, "elapsed"] = test_df.loc[test_df.elapsed != -1, "elapsed"].mean()
 test_df.to_csv("/opt/ml/input/data/train_dataset/test_data_add_elapsed.csv", index=False)
