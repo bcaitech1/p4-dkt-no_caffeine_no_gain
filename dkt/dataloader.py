@@ -89,16 +89,6 @@ class Preprocess:
         # use 3 features instead testId, assessmentItemID
         df['classification'] = df['testId'].str[2:3]
         df['paperNum'] = df['testId'].str[-3:]
-        # for i in range(len(df)):
-        #     if df['paperNum'][i] in [0, '000', '0']:
-        #         print(df['testId'][i])
-        #         exit()
-        # print("no problem")
-        # print(df['paperNum'])
-        # print(df['paperNum'].item())
-        # if df['paperNum'] == 0 or df['paperNum'] == "0":
-        #     print(df['testId'])
-        #     exit()
         df['problemNum'] = df['assessmentItemID'].str[-3:]
 
         df = df.astype({'Timestamp': 'datetime64[ns]'})
@@ -120,7 +110,6 @@ class Preprocess:
             else:
                 # Evening
                 return 3
-            return 999
         
         df["time_bin"] = df.hours.apply(time_bin)
         df = df.astype({'Timestamp': 'str'})
@@ -138,7 +127,6 @@ class Preprocess:
         df = pd.read_csv(csv_file_path)#, nrows=100000)
         df = self.__feature_engineering(df)
         df = self.__preprocessing(df, is_train)
-        print(len(df.elapsed.unique()), len(df.time_bin.unique()))
 
         # 추후 feature를 embedding할 시에 embedding_layer의 input 크기를 결정할때 사용
         self.args.n_embedding_layers = []       # 나중에 사용할 떄 embedding key들을 저장
@@ -151,6 +139,9 @@ class Preprocess:
         group = df[columns].groupby('userID').apply(
                 self.df_apply_function
             )
+
+        if not is_train or not self.args.split_data:
+            return group.values
         
         splited_file_name = file_name.split('.')[0] + '_splited' + '.pkl'
         splited_file_path = os.path.join(self.args.data_dir, splited_file_name)
@@ -178,8 +169,6 @@ class Preprocess:
                     for c in range(n_col):
                         row.append(ft[c][rem+q*self.args.max_seq_len : rem+(q+1)*self.args.max_seq_len])
                     aug.loc[idx] = tuple(row)
-                    print(f"tuple(row) : {tuple(row)}")
-                    exit()
                     idx += 1
                 
             aug.to_pickle(splited_file_path)
@@ -206,8 +195,6 @@ class DKTDataset(torch.utils.data.Dataset):
 
         # 각 data의 sequence length
         seq_len = len(row[0])
-        print(f"seq_len : {seq_len}")
-        print(f"row : {row}")
 
         cate_cols = [val for val in row]
 
@@ -239,12 +226,6 @@ def collate(batch):
     col_n = len(batch[0])
     col_list = [[] for _ in range(col_n)]
     max_seq_len = len(batch[0][-1])
-    # print(batch)
-    print(f"batch : {type(batch), len(batch)}")
-    print(f"batch[0] : {type(batch[0]), len(batch[0])}")
-    print(batch[0])
-    print(f"batch[0][0] : {type(batch[0][0]), len(batch[0][0])}")
-    exit()
 
         
     # batch의 값들을 각 column끼리 그룹화
