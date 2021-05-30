@@ -27,7 +27,7 @@ class LSTM(nn.Module):
         # Embedding 
         # interaction은 현재 correct로 구성되어있다. correct(1, 2) + padding(0)
         self.embedding_interaction = nn.Embedding(3, self.hidden_dim // self.args.dim_div)
-        self.embedding_features = []
+        self.embedding_features = nn.ModuleList([])
         for value in self.args.n_embedding_layers:
             self.embedding_features.append(nn.Embedding(value + 1, self.hidden_dim // self.args.dim_div))
 
@@ -77,8 +77,7 @@ class LSTM(nn.Module):
 
         embed_features = []
         for _input, _embedding_feature in zip(input[:-4], self.embedding_features):
-            embedding_feature = _embedding_feature.to(self.args.device)
-            value = embedding_feature(_input)
+            value = _embedding_feature(_input)
             embed_features.append(value)
         #embed_classification = self.embedding_classification(classification)
         #embed_paperNum = self.embedding_paperNum(paperNum)
@@ -116,7 +115,7 @@ class LSTMATTN(nn.Module):
         # Embedding 
         # interaction은 현재 correct로 구성되어있다. correct(1, 2) + padding(0)
         self.embedding_interaction = nn.Embedding(3, self.hidden_dim // self.args.dim_div)
-        self.embedding_features = []
+        self.embedding_features = nn.ModuleList([])
         for value in self.args.n_embedding_layers:
             self.embedding_features.append(nn.Embedding(value + 1, self.hidden_dim // self.args.dim_div))
 
@@ -171,8 +170,7 @@ class LSTMATTN(nn.Module):
 
         embed_features = []
         for _input, _embedding_feature in zip(input[:-4], self.embedding_features):
-            embedding_feature = _embedding_feature.to(self.args.device)
-            value = embedding_feature(_input)
+            value = _embedding_feature(_input)
             embed_features.append(value)
 
         embed_features = [embed_interaction] + embed_features
@@ -214,7 +212,7 @@ class Bert(nn.Module):
         # Embedding
         # interaction은 현재 correct로 구성되어있다. correct(1, 2) + padding(0)
         self.embedding_interaction = nn.Embedding(3, self.hidden_dim // self.args.dim_div)
-        self.embedding_features = []
+        self.embedding_features = nn.ModuleList([])
         for value in self.args.n_embedding_layers:
             self.embedding_features.append(nn.Embedding(value + 1, self.hidden_dim // self.args.dim_div))
 
@@ -251,8 +249,7 @@ class Bert(nn.Module):
 
         embed_features = []
         for _input, _embedding_feature in zip(input[:-4], self.embedding_features):
-            embedding_feature = _embedding_feature.to(self.args.device)
-            value = embedding_feature(_input)
+            value = _embedding_feature(_input)
             embed_features.append(value)
 
         embed_features = [embed_interaction] + embed_features
