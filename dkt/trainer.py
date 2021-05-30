@@ -228,9 +228,6 @@ def process_batch(batch, args):
     interaction = interaction.roll(shifts=1, dims=1)
     interaction[:, 0] = 0 # set padding index to the first sequence
     interaction = (interaction * mask).to(torch.int64)
-    # print(interaction)
-    # exit()
-    #  test_id, question_id, tag
 
     features = [((feature + 1) * mask).to(torch.int64) for feature in features]
 
