@@ -7,6 +7,8 @@ import random
 from sklearn.preprocessing import LabelEncoder
 import numpy as np
 import torch
+import pickle
+from tqdm import tqdm
 
 class Preprocess:
     def __init__(self,args):
@@ -108,7 +110,6 @@ class Preprocess:
             else:
                 # Evening
                 return 3
-            return 999
         
         df["time_bin"] = df.hours.apply(time_bin)
         df = df.astype({'Timestamp': 'str'})
@@ -126,7 +127,6 @@ class Preprocess:
         df = pd.read_csv(csv_file_path)#, nrows=100000)
         df = self.__feature_engineering(df)
         df = self.__preprocessing(df, is_train)
-        print(len(df.elapsed.unique()), len(df.time_bin.unique()))
 
         # 추후 feature를 embedding할 시에 embedding_layer의 input 크기를 결정할때 사용
         self.args.n_embedding_layers = []       # 나중에 사용할 떄 embedding key들을 저장
@@ -140,7 +140,43 @@ class Preprocess:
                 self.df_apply_function
             )
 
-        return group.values
+        if not is_train or not self.args.split_data:
+            return group.values
+        
+        splited_file_name = file_name.split('.')[0] + '_splited' + '.pkl'
+        splited_file_path = os.path.join(self.args.data_dir, splited_file_name)
+        if os.path.exists(splited_file_path):
+            aug = pd.read_pickle(splited_file_path)
+            print(f"{splited_file_name} is loaded!")
+        else:
+            print("There is no splited data.")
+            aug = group.copy()
+            idx = 0
+            n_col = len(columns)-1
+            for ft in tqdm(group):
+                total = len(ft[0])
+                quot, rem = total//self.args.max_seq_len, total%self.args.max_seq_len
+                
+                if rem != 0:
+                    first = np.zeros((n_col, self.args.max_seq_len), dtype=np.int16)
+                    for c in range(n_col):
+                        first[c][-rem:] = ft[c][:rem]
+                    aug.loc[idx] = tuple(first)
+                    idx += 1
+
+                for q in range(quot):
+                    row = []
+                    for c in range(n_col):
+                        row.append(ft[c][rem+q*self.args.max_seq_len : rem+(q+1)*self.args.max_seq_len])
+                    aug.loc[idx] = tuple(row)
+                    idx += 1
+                
+            aug.to_pickle(splited_file_path)
+            print(f"{splited_file_name} is saved!")
+
+        print(f"aug len is {len(aug)}")
+        return aug.values
+
 
     def load_train_data(self, file_name):
         self.train_data = self.load_data_from_file(file_name)
@@ -208,7 +244,7 @@ def collate(batch):
 
 def get_loaders(args, train, valid):
 
-    pin_memory = False
+    pin_memory = True
     train_loader, valid_loader = None, None
     
     if train is not None:

@@ -225,6 +225,7 @@ class Bert(nn.Module):
             hidden_size=self.hidden_dim,
             num_hidden_layers=self.args.n_layers,
             num_attention_heads=self.args.n_heads,
+            intermediate_size=self.hidden_dim*2,
             max_position_embeddings=self.args.max_seq_len          
         )
 

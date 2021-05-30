@@ -17,7 +17,7 @@ def parse_args(mode='train'):
     
     parser.add_argument('--model_dir', default='models/', type=str, help='model directory')
 
-    parser.add_argument('--model_name', default='', type=str, help='model file name')
+    parser.add_argument('--model_name', default='', type=str, help='model folder name')
     parser.add_argument('--model_epoch', default=0, type=int, help='epoch')
 
     parser.add_argument('--output_dir', default='output/', type=str, help='output directory')
@@ -41,6 +41,7 @@ def parse_args(mode='train'):
     parser.add_argument('--clip_grad', default=10, type=int, help='clip grad')
     parser.add_argument('--patience', default=5, type=int, help='for early stopping')
     parser.add_argument('--valid_ratio', default=0.3, type=float, help='valid ratio')
+    parser.add_argument('--split_data', default=0, type=int, help='split data')
     
     # log
     parser.add_argument('--log_steps', default=50, type=int, help='print log per n steps')
