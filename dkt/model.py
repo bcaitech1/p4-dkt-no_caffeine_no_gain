@@ -292,7 +292,7 @@ class LastQuery(nn.Module):
         
         # Embedding 
         # interaction은 현재 correct으로 구성되어있다. correct(1, 2) + padding(0)
-        self.embedding_interaction = nn.Embedding(3, self.hidden_dim//3)
+        self.embedding_interaction = nn.Embedding(3, self.hidden_dim//self.args.dim_div)
 
 #         self.embedding_position = nn.Embedding(self.args.max_seq_len, self.hidden_dim)
     

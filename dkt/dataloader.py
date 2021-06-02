@@ -127,12 +127,6 @@ class Preprocess:
         df = self.__feature_engineering(df)
         df = self.__preprocessing(df, is_train)
         
-        #####
-        self.args.n_questions = len(np.load(os.path.join(self.args.asset_dir,'assessmentItemID_classes.npy')))
-        self.args.n_test = len(np.load(os.path.join(self.args.asset_dir,'testId_classes.npy')))
-        self.args.n_tag = len(np.load(os.path.join(self.args.asset_dir,'KnowledgeTag_classes.npy')))
-        ### 
-        
         # 추후 feature를 embedding할 시에 embedding_layer의 input 크기를 결정할때 사용
         self.args.n_embedding_layers = []       # 나중에 사용할 떄 embedding key들을 저장
         for idx, val in enumerate(self.args.USE_COLUMN):
@@ -148,7 +142,7 @@ class Preprocess:
         if not is_train or not self.args.split_data:
             return group.values
         
-        splited_file_name = file_name.split('.')[0] + '_splited' + '.pkl'
+        splited_file_name = file_name.split('.')[0] + '_splited' + '.csv'
         splited_file_path = os.path.join(self.args.data_dir, splited_file_name)
         if os.path.exists(splited_file_path):
             aug = pd.read_pickle(splited_file_path)
