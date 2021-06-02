@@ -8,7 +8,7 @@ from .optimizer import get_optimizer
 from .scheduler import get_scheduler
 from .criterion import get_criterion
 from .metric import get_metric
-from .model import LSTM, LSTMATTN, Bert
+from .model import LSTM, LSTMATTN, Bert, LastQuery
 
 import wandb
 
@@ -202,8 +202,8 @@ def get_model(args):
     if args.model == 'lstm': model = LSTM(args)
     if args.model == 'lstmattn': model = LSTMATTN(args)
     if args.model == 'bert': model = Bert(args)
+    if args.model == 'lastquery' : model = LastQuery(args)
     
-
     model.to(args.device)
 
     return model
