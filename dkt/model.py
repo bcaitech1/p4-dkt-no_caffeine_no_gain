@@ -268,3 +268,165 @@ class Bert(nn.Module):
         preds = self.activation(out).view(batch_size, -1)
 
         return preds
+    
+
+class Feed_Forward_block(nn.Module):
+    """
+    out =  Relu( M_out*w1 + b1) *w2 + b2
+    """
+    def __init__(self, dim_ff):
+        super().__init__()
+        self.layer1 = nn.Linear(in_features=dim_ff, out_features=dim_ff)
+        self.layer2 = nn.Linear(in_features=dim_ff, out_features=dim_ff)
+
+    def forward(self,ffn_in):
+        return self.layer2(F.relu(self.layer1(ffn_in)))
+
+class LastQuery(nn.Module):
+    def __init__(self, args):
+        super(LastQuery, self).__init__()
+        self.args = args
+        self.device = args.device
+
+        self.hidden_dim = self.args.hidden_dim
+        
+        # Embedding 
+        # interaction은 현재 correct으로 구성되어있다. correct(1, 2) + padding(0)
+        self.embedding_interaction = nn.Embedding(3, self.hidden_dim//self.args.dim_div)
+
+#         self.embedding_position = nn.Embedding(self.args.max_seq_len, self.hidden_dim)
+    
+        self.embedding_features = nn.ModuleList([])
+        for value in self.args.n_embedding_layers:
+            self.embedding_features.append(nn.Embedding(value + 1, self.hidden_dim // self.args.dim_div))
+
+        self.comb_proj = nn.Linear((self.hidden_dim//self.args.dim_div)*(len(self.args.n_embedding_layers)+1), self.hidden_dim)
+        
+        # Encoder
+        self.query = nn.Linear(in_features=self.hidden_dim, out_features=self.hidden_dim)
+        self.key = nn.Linear(in_features=self.hidden_dim, out_features=self.hidden_dim)
+        self.value = nn.Linear(in_features=self.hidden_dim, out_features=self.hidden_dim)
+
+        self.attn = nn.MultiheadAttention(embed_dim=self.hidden_dim, num_heads=self.args.n_heads)
+        self.mask = None # last query에서는 필요가 없지만 수정을 고려하여서 넣어둠
+        self.ffn = Feed_Forward_block(self.hidden_dim)      
+
+        self.ln1 = nn.LayerNorm(self.hidden_dim)
+        self.ln2 = nn.LayerNorm(self.hidden_dim)
+
+        # LSTM
+        self.lstm = nn.LSTM(
+            self.hidden_dim,
+            self.hidden_dim,
+            self.args.n_layers,
+            batch_first=True)
+
+        # Fully connected layer
+        self.fc = nn.Linear(self.hidden_dim, 1)
+       
+        self.activation = nn.Sigmoid()
+
+
+    def get_mask(self, seq_len, index, batch_size):
+        """
+        batchsize * n_head 수만큼 각 mask를 반복하여 증가시킨다
+        
+        참고로 (batch_size*self.args.n_heads, seq_len, seq_len) 가 아니라
+              (batch_size*self.args.n_heads,       1, seq_len) 로 하는 이유는
+        
+        last query라 output의 seq부분의 사이즈가 1이기 때문이다
+        """
+        # [[1], -> [1, 2, 3]
+        #  [2],
+        #  [3]]
+        index = index.view(-1)
+
+        # last query의 index에 해당하는 upper triangular mask의 row를 사용한다
+        mask = torch.from_numpy(np.triu(np.ones((seq_len, seq_len)), k=1))
+        mask = mask[index]
+
+        # batchsize * n_head 수만큼 각 mask를 반복하여 증가시킨다
+        mask = mask.repeat(1, self.args.n_heads).view(batch_size*self.args.n_heads, -1, seq_len)
+        return mask.masked_fill(mask==1, float('-inf'))
+
+    def get_pos(self, seq_len):
+        # use sine positional embeddinds
+        return torch.arange(seq_len).unsqueeze(0)
+ 
+    def init_hidden(self, batch_size):
+        h = torch.zeros(
+            self.args.n_layers,
+            batch_size,
+            self.args.hidden_dim)
+        h = h.to(self.device)
+
+        c = torch.zeros(
+            self.args.n_layers,
+            batch_size,
+            self.args.hidden_dim)
+        c = c.to(self.device)
+
+        return (h, c)
+
+
+    def forward(self, input):
+#         test, question, tag, _, mask, interaction, index = input
+        _, mask, interaction, index = input[-4:]
+        batch_size = interaction.size(0)
+        seq_len = interaction.size(1)
+
+        # 신나는 embedding
+        embed_interaction = self.embedding_interaction(interaction)
+        embed_features = []
+        for _input, _embedding_feature in zip(input[:-4], self.embedding_features):
+            value = _embedding_feature(_input)
+            embed_features.append(value)
+    
+        embed_features = [embed_interaction] + embed_features
+        embed = torch.cat(embed_features, 2)
+
+        embed = self.comb_proj(embed)
+
+        # Positional Embedding
+        # last query에서는 positional embedding을 하지 않음
+#         position = self.get_pos(seq_len).to('cuda')
+#         embed_pos = self.embedding_position(position)
+#         embed = embed + embed_pos
+
+        ####################### ENCODER #####################
+        q = self.query(embed)
+
+        # 이 3D gathering은 머리가 아픕니다. 잠시 머리를 식히고 옵니다.
+        q = torch.gather(q, 1, index.repeat(1, self.hidden_dim).unsqueeze(1))
+        q = q.permute(1, 0, 2)
+
+        k = self.key(embed).permute(1, 0, 2)
+        v = self.value(embed).permute(1, 0, 2)
+
+        ## attention
+        self.mask = self.get_mask(seq_len, index, batch_size).to(self.device)
+        out, _ = self.attn(q, k, v, attn_mask=self.mask)
+        
+        ## residual + layer norm
+        out = out.permute(1, 0, 2)
+        out = embed + out
+        out = self.ln1(out)
+
+        ## feed forward network
+        out = self.ffn(out)
+
+        ## residual + layer norm
+        out = embed + out
+        out = self.ln2(out)
+
+        ###################### LSTM #####################
+        hidden = self.init_hidden(batch_size)
+        out, hidden = self.lstm(out, hidden)
+
+        ###################### DNN #####################
+        out = out.contiguous().view(batch_size, -1, self.hidden_dim)
+        out = self.fc(out)
+
+        preds = self.activation(out).view(batch_size, -1)
+
+        return preds
