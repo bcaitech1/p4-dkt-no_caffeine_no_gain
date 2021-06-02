@@ -148,7 +148,7 @@ class Preprocess:
         if not is_train or not self.args.split_data:
             return group.values
         
-        splited_file_name = file_name.split('.')[0] + '_splited' + '.csv'
+        splited_file_name = file_name.split('.')[0] + '_splited' + '.pkl'
         splited_file_path = os.path.join(self.args.data_dir, splited_file_name)
         if os.path.exists(splited_file_path):
             aug = pd.read_pickle(splited_file_path)
