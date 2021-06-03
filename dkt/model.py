@@ -258,7 +258,6 @@ class Bert(nn.Module):
 
         embed = torch.cat(embed_features, 2)
 
-        # print(f"embed : {embed.shape, (self.hidden_dim//self.args.dim_div)*(len(self.args.n_embedding_layers)+1)}, ")
         X = self.comb_proj(embed)
 
         # Bert
