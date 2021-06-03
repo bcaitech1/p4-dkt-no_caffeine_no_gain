@@ -226,7 +226,8 @@ class Bert(nn.Module):
             num_hidden_layers=self.args.n_layers,
             num_attention_heads=self.args.n_heads,
             intermediate_size=self.hidden_dim*2,
-            max_position_embeddings=self.args.max_seq_len          
+            max_position_embeddings=self.args.max_seq_len,
+            is_decoder=True          
         )
 
         # Defining the layers
@@ -256,7 +257,6 @@ class Bert(nn.Module):
         embed_features = [embed_interaction] + embed_features
 
         embed = torch.cat(embed_features, 2)
-
 
         X = self.comb_proj(embed)
 

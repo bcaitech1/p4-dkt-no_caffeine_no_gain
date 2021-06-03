@@ -1,7 +1,7 @@
 import os
 import torch
 import numpy as np
-
+import json
 
 from .dataloader import get_loaders
 from .optimizer import get_optimizer
@@ -21,6 +21,16 @@ def run(args, train_data, valid_data):
     args.warmup_steps = args.total_steps // 10
 
     print(args)
+    model_dir = os.path.join(args.model_dir, args.model_name)
+    os.makedirs(model_dir, exist_ok=True)
+    json.dump(
+        vars(args),
+        open(f"{model_dir}/exp_config.json", "w"),
+        indent=2,
+        ensure_ascii=False,
+    )
+    
+    print(f"\n{model_dir}/exp_config.json is saved!\n")
             
     model = get_model(args)
     optimizer = get_optimizer(model, args)
@@ -47,7 +57,6 @@ def run(args, train_data, valid_data):
             best_auc = auc
             # torch.nn.DataParallel로 감싸진 경우 원래의 model을 가져옵니다.
             model_to_save = model.module if hasattr(model, 'module') else model
-            model_dir = os.path.join(args.model_dir, args.model_name)
             model_name = 'model_epoch' + str(epoch) + ".pt"
             save_checkpoint({
                 'epoch': epoch,

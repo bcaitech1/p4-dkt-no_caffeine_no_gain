@@ -51,8 +51,7 @@ class Preprocess:
         if not os.path.exists(self.args.asset_dir):
             os.makedirs(self.args.asset_dir)
             
-        for col in cate_cols:
-            
+        for col in cate_cols:            
             le = LabelEncoder()
             if is_train:
                 #For UNKNOWN class
@@ -72,7 +71,7 @@ class Preprocess:
 
         def convert_time(s):
             timestamp = time.mktime(datetime.strptime(s, '%Y-%m-%d %H:%M:%S').timetuple())
-            return int(timestamp)
+            return int(timestamp) 
 
         df['Timestamp'] = df['Timestamp'].apply(convert_time)
         
@@ -82,8 +81,8 @@ class Preprocess:
 
         self.args.USERID_COLUMN = ['userID']
         self.args.ANSWER_COLUMN = ['answerCode']
-        self.args.USE_COLUMN = ['KnowledgeTag', 'testId','assessmentItemID', 'classification', 'paperNum', 'problemNum', 'elapsed', 'time_bin', 'hours']
-        self.args.EXCLUDE_COLUMN = ['Timestamp']
+        self.args.USE_COLUMN = ['KnowledgeTag','assessmentItemID', 'classification', 'paperNum', 'problemNum', 'elapsed', 'time_bin', 'hours']
+        self.args.EXCLUDE_COLUMN = ['Timestamp', 'testId']
 
         # use 3 features instead testId, assessmentItemID
         df['classification'] = df['testId'].str[2:3]
@@ -142,7 +141,7 @@ class Preprocess:
         if not is_train or not self.args.split_data:
             return group.values
         
-        splited_file_name = file_name.split('.')[0] + '_splited' + '.csv'
+        splited_file_name = file_name.split('.')[0] + '_splited' + '.pkl'
         splited_file_path = os.path.join(self.args.data_dir, splited_file_name)
         if os.path.exists(splited_file_path):
             aug = pd.read_pickle(splited_file_path)

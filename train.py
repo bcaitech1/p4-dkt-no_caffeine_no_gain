@@ -9,7 +9,6 @@ def main(args):
     if args.use_wandb:
         wandb.login()
     
-    
     setSeeds(42) 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     args.device = device
