@@ -16,6 +16,8 @@ def main(args):
     preprocess = Preprocess(args)
     preprocess.load_train_data(args.file_name)
     train_data = preprocess.get_train_data()
+    if args.window:
+        train_data = preprocess.sliding_window(train_data, args)
 
     train_data, valid_data = preprocess.split_data(train_data, args.valid_ratio)
 

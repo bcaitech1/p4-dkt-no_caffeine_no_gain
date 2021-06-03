@@ -42,6 +42,15 @@ def parse_args(mode='train'):
     parser.add_argument('--patience', default=5, type=int, help='for early stopping')
     parser.add_argument('--valid_ratio', default=0.3, type=float, help='valid ratio')
     parser.add_argument('--split_data', default=0, type=int, help='split data')
+
+    # Sliding Window
+    parser.add_argument('--window', default=False, type=bool, help='Sliding Window augmentation')
+    parser.add_argument('--shuffle', default=False, type=bool, help='Shuffle sliding window')
+    parser.add_argument('--stride', default=1, type=int, help='Sliding Window stride')
+
+    # T-Fixup
+    parser.add_argument('--Tfixup', default=False, type=bool, help='Using T-Fixup')
+    parser.add_argument('--layer_norm', default=False, type=bool, help='T-Fixup with layer norm')
     
     # log
     parser.add_argument('--log_steps', default=50, type=int, help='print log per n steps')
