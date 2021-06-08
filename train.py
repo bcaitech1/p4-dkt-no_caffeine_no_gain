@@ -20,7 +20,6 @@ def main(args):
     valid_data = preprocess.get_valid_data()
     if args.window:
         train_data = preprocess.sliding_window(train_data, args)
-        valid_data = preprocess.sliding_window(valid_data, args)
 
     if args.use_wandb:
         wandb.init(project='dkt', config=vars(args))

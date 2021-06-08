@@ -80,10 +80,8 @@ KnowledgeTag_mean_sum = train_org_df.groupby(['KnowledgeTag'])['answerCode'].agg
 
 # 맞춰야하는 문항 ID 파악
 set_assessmentItemID = set(test_org_df.loc[test_org_df.answerCode == -1, 'assessmentItemID'].values)
-test = test_org_df[test_org_df['userID']==test_org_df['userID'].shift(-1)]
 
 train = feature_engineering(train_org_df)
-test = feature_engineering(test)
 # 피처를 대충만들어서 꽤 오래걸립니다.
 
 train = train.fillna(0)
