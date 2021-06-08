@@ -22,8 +22,6 @@ def main(args):
         train_data = preprocess.sliding_window(train_data, args)
         valid_data = preprocess.sliding_window(valid_data, args)
 
-    # train_data, valid_data = preprocess.split_data(train_data, args.valid_ratio)
-
     if args.use_wandb:
         wandb.init(project='dkt', config=vars(args))
     trainer.run(args, train_data, valid_data)
