@@ -8,6 +8,7 @@ import wandb
 def main(args):
     if args.use_wandb:
         wandb.login()
+        wandb.init(project='dkt', config=vars(args))
     
     setSeeds(42) 
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -16,13 +17,12 @@ def main(args):
     preprocess = Preprocess(args)
     preprocess.load_train_data(args.file_name)
     train_data = preprocess.get_train_data()
-    if args.window:
-        train_data = preprocess.sliding_window(train_data, args)
+    valid_data = preprocess.get_valid_data()
 
-    train_data, valid_data = preprocess.split_data(train_data, args.valid_ratio)
-
-    if args.use_wandb:
-        wandb.init(project='dkt', config=vars(args))
+    print()
+    print(f"# of train_data : {len(train_data)}")
+    print(f"# of valid_data : {len(valid_data)}")
+    print()
 
     trainer.run(args, train_data, valid_data)
     

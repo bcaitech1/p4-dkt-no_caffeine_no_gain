@@ -14,20 +14,27 @@ class Preprocess:
     def __init__(self,args):
         self.args = args
         self.train_data = None
+        self.valid_data = None
         self.test_data = None
-        
 
     def get_train_data(self):
         return self.train_data
+
+    def get_valid_data(self):
+        return self.valid_data
 
     def get_test_data(self):
         return self.test_data
 
 
-    def split_data(self, data, valid_ratio=0.3, shuffle=True, seed=0):
+    def split_data(self, shuffle=True, seed=0):
         """
         split data into two parts with a given ratio.
         """
+
+        data = self.train_data
+        valid_ratio = self.args.valid_ratio
+
         train_ratio = 1 - valid_ratio
 
         if shuffle:
@@ -40,7 +47,9 @@ class Preprocess:
 
         return data_1, data_2
 
-    def sliding_window(self, data, args):
+    def sliding_window(self):
+        args = self.args
+        data = self.train_data
         window_size = args.max_seq_len
         stride = args.stride
 
@@ -64,7 +73,7 @@ class Preprocess:
                     # Shuffle
                     # 마지막 데이터의 경우 shuffle을 하지 않는다
                     if args.shuffle and window_i + 1 != total_window:
-                        shuffle_datas = shuffle(window_data, window_size, args)
+                        shuffle_datas = self.shuffle(window_data, window_size, args)
                         augmented_datas += shuffle_datas
                     else:
                         augmented_datas.append(tuple(window_data))
@@ -77,8 +86,7 @@ class Preprocess:
                         window_data.append(col[-window_size:])
                     augmented_datas.append(tuple(window_data))
 
-
-        return augmented_datas
+        return np.array(augmented_datas)
 
     def shuffle(self, data, data_size, args):
         shuffle_datas = []
@@ -180,7 +188,7 @@ class Preprocess:
         
         # 추후 feature를 embedding할 시에 embedding_layer의 input 크기를 결정할때 사용
         self.args.n_embedding_layers = []       # 나중에 사용할 떄 embedding key들을 저장
-        for idx, val in enumerate(self.args.USE_COLUMN):
+        for val in self.args.USE_COLUMN:
             self.args.n_embedding_layers.append(len(np.load(os.path.join(self.args.asset_dir, val+'_classes.npy'))))
 
 
@@ -190,48 +198,28 @@ class Preprocess:
                 self.df_apply_function
             )
 
-        if not is_train or not self.args.split_data:
-            return group.values
-        
-        splited_file_name = file_name.split('.')[0] + '_splited' + '.pkl'
-        splited_file_path = os.path.join(self.args.data_dir, splited_file_name)
-        if os.path.exists(splited_file_path):
-            aug = pd.read_pickle(splited_file_path)
-            print(f"{splited_file_name} is loaded!")
-        else:
-            print("There is no splited data.")
-            
-            aug = group.copy()
-            idx = 0
-            n_col = len(columns)-1
-            for ft in tqdm(group):
-                total = len(ft[0])
-                quot, rem = total//self.args.max_seq_len, total%self.args.max_seq_len
-                
-                if rem != 0:
-                    first = np.zeros((n_col, self.args.max_seq_len), dtype=np.int16)
-                    for c in range(n_col):
-                        first[c][-rem:] = ft[c][:rem]
-                    aug.loc[idx] = tuple(first)
-                    idx += 1
-
-                for q in range(quot):
-                    row = []
-                    for c in range(n_col):
-                        row.append(ft[c][rem+q*self.args.max_seq_len : rem+(q+1)*self.args.max_seq_len])
-                    aug.loc[idx] = tuple(row)
-                    idx += 1
-                
-            aug.to_pickle(splited_file_path)
-            print(f"{splited_file_name} is saved!")
-
-        print(f"aug len is {len(aug)}")
-        return aug.values
+        return group.values
 
 
-    def load_train_data(self, file_name):
+    def load_train_data(self, file_name):        
         self.train_data = self.load_data_from_file(file_name)
+        self.train_data, self.valid_data = self.split_data()
 
+        if self.args.window:
+            augmented_train_file_name = file_name.split('.')[0] + '_val' + str(self.args.valid_ratio) + '_msl' + str(self.args.max_seq_len) + '_st' + str(self.args.stride) + '.npy'
+            augmented_train_file_path = os.path.join(self.args.data_dir, augmented_train_file_name)
+                
+            if os.path.exists(augmented_train_file_path):
+                print(f"{augmented_train_file_name} exists!")
+                self.train_data = np.load(augmented_train_file_path, allow_pickle=True)
+                print(f"{augmented_train_file_name} is loaded!")
+            else:
+                print(f"{augmented_train_file_name} doesn't exist!")
+                self.train_data = self.sliding_window()
+                np.save(augmented_train_file_path, self.train_data)
+                print(f"{augmented_train_file_name} is saved!")
+            
+                
     def load_test_data(self, file_name):
         self.test_data = self.load_data_from_file(file_name, is_train= False)
 

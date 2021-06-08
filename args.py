@@ -46,7 +46,8 @@ def parse_args(mode='train'):
     # Sliding Window
     parser.add_argument('--window', default=False, type=bool, help='Sliding Window augmentation')
     parser.add_argument('--shuffle', default=False, type=bool, help='Shuffle sliding window')
-    parser.add_argument('--stride', default=1, type=int, help='Sliding Window stride')
+    parser.add_argument('--stride', default=20, type=int, help='Sliding Window stride')
+    parser.add_argument('--shuffle_n', default=1, type=int, help='Shuffle times')
 
     # T-Fixup
     parser.add_argument('--Tfixup', default=False, type=bool, help='Using T-Fixup')
