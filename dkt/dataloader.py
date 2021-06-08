@@ -14,31 +14,35 @@ class Preprocess:
     def __init__(self,args):
         self.args = args
         self.train_data = None
+        self.valid_data = None
         self.test_data = None
         
 
     def get_train_data(self):
         return self.train_data
 
+    def get_valid_data(self):
+        return self.valid_data
+
     def get_test_data(self):
         return self.test_data
 
 
-    def split_data(self, data, valid_ratio=0.3, shuffle=True, seed=0):
-        """
-        split data into two parts with a given ratio.
-        """
-        train_ratio = 1 - valid_ratio
+    # def split_data(self, data, valid_ratio=0.3, shuffle=True, seed=0):
+    #     """
+    #     split data into two parts with a given ratio.
+    #     """
+    #     train_ratio = 1 - valid_ratio
 
-        if shuffle:
-            random.seed(seed) # fix to default seed 0
-            random.shuffle(data)
+    #     if shuffle:
+    #         random.seed(seed) # fix to default seed 0
+    #         random.shuffle(data)
 
-        size = int(len(data) * train_ratio)
-        data_1 = data[:size]
-        data_2 = data[size:]
+    #     size = int(len(data) * train_ratio)
+    #     data_1 = data[:size]
+    #     data_2 = data[size:]
 
-        return data_1, data_2
+    #     return data_1, data_2
 
     def sliding_window(self, data, args):
         window_size = args.max_seq_len
@@ -232,8 +236,11 @@ class Preprocess:
     def load_train_data(self, file_name):
         self.train_data = self.load_data_from_file(file_name)
 
+    def load_valid_data(self, file_name):
+        self.valid_data = self.load_data_from_file(file_name, is_train=False)
+
     def load_test_data(self, file_name):
-        self.test_data = self.load_data_from_file(file_name, is_train= False)
+        self.test_data = self.load_data_from_file(file_name, is_train=False)
 
 
 class DKTDataset(torch.utils.data.Dataset):
@@ -294,7 +301,6 @@ def collate(batch):
 
 
 def get_loaders(args, train, valid):
-
     pin_memory = True
     train_loader, valid_loader = None, None
     
