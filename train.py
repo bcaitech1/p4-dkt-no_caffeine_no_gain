@@ -14,16 +14,15 @@ def main(args):
     args.device = device
 
     preprocess = Preprocess(args)
-    preprocess.load_train_data(args.file_name)
+    preprocess.load_train_data(args.train_file_name)
+    preprocess.load_valid_data(args.valid_file_name)
     train_data = preprocess.get_train_data()
+    valid_data = preprocess.get_valid_data()
     if args.window:
         train_data = preprocess.sliding_window(train_data, args)
 
-    train_data, valid_data = preprocess.split_data(train_data, args.valid_ratio)
-
     if args.use_wandb:
         wandb.init(project='dkt', config=vars(args))
-
     trainer.run(args, train_data, valid_data)
     
 
