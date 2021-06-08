@@ -27,29 +27,10 @@ class Preprocess:
         return self.test_data
 
 
-    def split_data(self, shuffle=True, seed=0):
-        """
-        split data into two parts with a given ratio.
-        """
-
-        data = self.train_data
-        valid_ratio = self.args.valid_ratio
-
-        train_ratio = 1 - valid_ratio
-
-        if shuffle:
-            random.seed(seed) # fix to default seed 0
-            random.shuffle(data)
-
-        size = int(len(data) * train_ratio)
-        data_1 = data[:size]
-        data_2 = data[size:]
-
-        return data_1, data_2
-
     def sliding_window(self):
         args = self.args
         data = self.train_data
+        
         window_size = args.max_seq_len
         stride = args.stride
 
@@ -105,37 +86,38 @@ class Preprocess:
         np.save(le_path, encoder.classes_)
 
 
-    def __preprocessing(self, df, is_train=True):
+    def __preprocessing(self, train_df, valid_df=None, is_train=True):
         cate_cols = self.args.USE_COLUMN
 
         if not os.path.exists(self.args.asset_dir):
             os.makedirs(self.args.asset_dir)
             
+        all_df = pd.concat([train_df, valid_df])
         for col in cate_cols:            
             le = LabelEncoder()
             if is_train:
                 #For UNKNOWN class
-                a = df[col].unique().tolist() + ['unknown']
+                a = all_df[col].unique().tolist() + ['unknown']
                 le.fit(a)
                 self.__save_labels(le, col)
             else:
                 label_path = os.path.join(self.args.asset_dir,col+'_classes.npy')
                 le.classes_ = np.load(label_path)
-                
-                df[col] = df[col].apply(lambda x: x if x in le.classes_ else 'unknown')
+                train_df[col] = train_df[col].apply(lambda x: x if x in le.classes_ else 'unknown')
+
             #모든 컬럼이 범주형이라고 가정
-            df[col]= df[col].astype(str)
-            test = le.transform(df[col])
-            df[col] = test
+            train_df[col]= train_df[col].astype(str)
+            test = le.transform(train_df[col])
+            train_df[col] = test
             
 
         def convert_time(s):
             timestamp = time.mktime(datetime.strptime(s, '%Y-%m-%d %H:%M:%S').timetuple())
             return int(timestamp) 
 
-        df['Timestamp'] = df['Timestamp'].apply(convert_time)
+        train_df['Timestamp'] = train_df['Timestamp'].apply(convert_time)
         
-        return df
+        return train_df
 
     def __feature_engineering(self, df):
 
@@ -180,11 +162,16 @@ class Preprocess:
     def df_apply_function(self, r):
         return tuple([r[x].values for x in self.args.USE_COLUMN] + [r[x].values for x in self.args.ANSWER_COLUMN])
 
-    def load_data_from_file(self, file_name, is_train=True):
-        csv_file_path = os.path.join(self.args.data_dir, file_name)
-        df = pd.read_csv(csv_file_path)#, nrows=100000)
-        df = self.__feature_engineering(df)
-        df = self.__preprocessing(df, is_train)
+    def load_data_from_file(self, train_file_name, valid_file_name=None, is_train=True):
+        csv_file_path = os.path.join(self.args.data_dir, train_file_name)
+        train_df = pd.read_csv(csv_file_path)#, nrows=100000)
+        train_df = self.__feature_engineering(train_df)
+        valid_df = None
+        if is_train:
+            csv_file_path = os.path.join(self.args.data_dir, valid_file_name)
+            valid_df = pd.read_csv(csv_file_path)
+            valid_df = self.__feature_engineering(valid_df)
+        train_df = self.__preprocessing(train_df, valid_df, is_train)
         
         # 추후 feature를 embedding할 시에 embedding_layer의 input 크기를 결정할때 사용
         self.args.n_embedding_layers = []       # 나중에 사용할 떄 embedding key들을 저장
@@ -192,36 +179,46 @@ class Preprocess:
             self.args.n_embedding_layers.append(len(np.load(os.path.join(self.args.asset_dir, val+'_classes.npy'))))
 
 
-        df = df.sort_values(by=['userID','Timestamp'], axis=0)
+        train_df = train_df.sort_values(by=['userID','Timestamp'], axis=0)
         columns = self.args.USERID_COLUMN+self.args.USE_COLUMN+self.args.ANSWER_COLUMN
-        group = df[columns].groupby('userID').apply(
+        group = train_df[columns].groupby('userID').apply(
                 self.df_apply_function
             )
-
+    
         return group.values
 
 
-    def load_train_data(self, file_name):        
-        self.train_data = self.load_data_from_file(file_name)
-        self.train_data, self.valid_data = self.split_data()
-
+    def load_train_data(self, train_file, valid_file):   
+        self.train_data = self.load_data_from_file(train_file, valid_file)
+        print("train data is loaded!")
+        print()
+            
         if self.args.window:
-            augmented_train_file_name = file_name.split('.')[0] + '_val' + str(self.args.valid_ratio) + '_msl' + str(self.args.max_seq_len) + '_st' + str(self.args.stride) + '.npy'
-            augmented_train_file_path = os.path.join(self.args.data_dir, augmented_train_file_name)
+            augmented_train_numpy_name = train_file.split('.')[0] + '_msl' + str(self.args.max_seq_len) + '_st' + str(self.args.stride) + '.npy'
+            augmented_train_numpy_path = os.path.join(self.args.data_dir, augmented_train_numpy_name)
                 
-            if os.path.exists(augmented_train_file_path):
-                print(f"{augmented_train_file_name} exists!")
-                self.train_data = np.load(augmented_train_file_path, allow_pickle=True)
-                print(f"{augmented_train_file_name} is loaded!")
+            if os.path.exists(augmented_train_numpy_path):
+                print(f"{augmented_train_numpy_name} exists!")
+                self.train_data = np.load(augmented_train_numpy_path, allow_pickle=True)
+                print(f"{augmented_train_numpy_name} is loaded!")
             else:
-                print(f"{augmented_train_file_name} doesn't exist!")
+                print(f"{augmented_train_numpy_name} doesn't exist!")
                 self.train_data = self.sliding_window()
-                np.save(augmented_train_file_path, self.train_data)
-                print(f"{augmented_train_file_name} is saved!")
+                np.save(augmented_train_numpy_path, self.train_data)
+                print(f"{augmented_train_numpy_name} is saved!")
+            print()
             
                 
-    def load_test_data(self, file_name):
-        self.test_data = self.load_data_from_file(file_name, is_train= False)
+    def load_valid_data(self, valid_file):
+        self.valid_data = self.load_data_from_file(valid_file, is_train=False)
+        print("valid data is loaded!")
+        print()
+        
+
+    def load_test_data(self, test_file):
+        self.test_data = self.load_data_from_file(test_file, is_train=False)
+        print("test data is loaded!")
+        print()
 
 
 class DKTDataset(torch.utils.data.Dataset):
@@ -282,7 +279,6 @@ def collate(batch):
 
 
 def get_loaders(args, train, valid):
-
     pin_memory = True
     train_loader, valid_loader = None, None
     

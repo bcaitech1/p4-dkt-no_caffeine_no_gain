@@ -5,6 +5,7 @@ from dkt import trainer
 import torch
 from dkt.utils import setSeeds
 import wandb
+
 def main(args):
     if args.use_wandb:
         wandb.login()
@@ -15,7 +16,8 @@ def main(args):
     args.device = device
 
     preprocess = Preprocess(args)
-    preprocess.load_train_data(args.file_name)
+    preprocess.load_train_data(args.train_file_name, args.valid_file_name)
+    preprocess.load_valid_data(args.valid_file_name)
     train_data = preprocess.get_train_data()
     valid_data = preprocess.get_valid_data()
 

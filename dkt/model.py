@@ -228,7 +228,7 @@ class Bert(nn.Module):
             num_attention_heads=self.args.n_heads,
             intermediate_size=self.hidden_dim*2,
             max_position_embeddings=self.args.max_seq_len,
-            is_decoder=True          
+            is_decoder=self.args.is_decoder
         )
 
         # Defining the layers
