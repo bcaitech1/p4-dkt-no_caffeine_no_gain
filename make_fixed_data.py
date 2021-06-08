@@ -15,47 +15,6 @@ train_org_df = train_org_df.sort_values(by=['userID', 'Timestamp']).reset_index(
 test_org_df = pd.read_csv(os.path.join(DATA_PATH, "test_data.csv"), dtype=dtype, parse_dates=['Timestamp'])
 test_org_df = test_org_df.sort_values(by=['userID', 'Timestamp']).reset_index(drop=True)
 
-def caffeine_feature(df):
-    
-    df['classification'] = df['testId'].str[2:3]
-    df['paperNum'] = df['testId'].str[-3:]
-    df['problemNum'] = df['assessmentItemID'].str[-3:]
-    
-    diff = df.loc[:, ['userID', 'Timestamp']].groupby('userID').diff().shift(-1).fillna(pd.Timedelta(seconds=-1))
-    diff = diff.fillna(pd.Timedelta(seconds=-1))
-    diff = diff['Timestamp'].apply(lambda x: x.total_seconds())
-    df['elapsed'] = diff
-    
-    idx = df[df['testId'] != df['testId'].shift(-1)].index
-    df.loc[idx, 'elapsed'] = -1
-    df.loc[df.elapsed > 250, 'elapsed'] = -1
-    df.loc[df.elapsed == -1, 'elapsed'] = df.loc[df.elapsed != -1, 'elapsed'].mean()
-    
-    def hours(timestamp):
-        return int(str(timestamp).split()[1].split(":")[0])
-
-    df["hours"] = df.Timestamp.apply(hours)
-
-    def time_bin(hours):
-        if 0 <= hours <= 5:
-            # Night
-            return 0
-        elif 6 <= hours <= 11:
-            # Morning
-            return 1
-        elif 12 <= hours <= 17:
-            # Daytime
-            return 2
-        else:
-            # Evening
-            return 3
-
-    df["time_bin"] = df.hours.apply(time_bin)
-    df = df.astype({'KnowledgeTag': 'int64', 'classification': 'int64', 'paperNum': 'int64', 'problemNum': 'int64'})
-    
-    return df
-
-
 def feature_engineering(df):
 
     # 문항이 중간에 비어있는 경우를 파악 (1,2,3,,5)
@@ -67,7 +26,6 @@ def feature_engineering(df):
     testId2maxlen = item_size.to_dict() # 중복해서 풀이할 놈들을 제거하기 위해
 
     item_max = df.groupby('testId').item.max()
-    # print(len(item_max[item_max + 1 != item_size]), '개의 시험지가 중간 문항이 빈다. item_order가 올바른 순서') # item_max는 0부터 시작하니까 + 1
     shit_index = item_max[item_max +1 != item_size].index
     shit_df = df.loc[df.testId.isin(shit_index),['assessmentItemID', 'testId']].drop_duplicates().sort_values('assessmentItemID')      
     shit_df_group = shit_df.groupby('testId')
@@ -111,9 +69,6 @@ def feature_engineering(df):
     df['ItemID_sum'] = df.assessmentItemID.map(assessmentItemID_mean_sum['sum'])
     df["tag_mean"] = df.KnowledgeTag.map(KnowledgeTag_mean_sum['mean'])
     df['tag_sum'] = df.KnowledgeTag.map(KnowledgeTag_mean_sum['sum'])
-
-    
-    df = caffeine_feature(df)
 
     return df
 
