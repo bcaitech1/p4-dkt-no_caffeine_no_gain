@@ -27,23 +27,6 @@ class Preprocess:
     def get_test_data(self):
         return self.test_data
 
-
-    # def split_data(self, data, valid_ratio=0.3, shuffle=True, seed=0):
-    #     """
-    #     split data into two parts with a given ratio.
-    #     """
-    #     train_ratio = 1 - valid_ratio
-
-    #     if shuffle:
-    #         random.seed(seed) # fix to default seed 0
-    #         random.shuffle(data)
-
-    #     size = int(len(data) * train_ratio)
-    #     data_1 = data[:size]
-    #     data_2 = data[size:]
-
-    #     return data_1, data_2
-
     def sliding_window(self, data, args):
         window_size = args.max_seq_len
         stride = args.stride

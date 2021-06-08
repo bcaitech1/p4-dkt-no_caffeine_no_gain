@@ -104,20 +104,6 @@ def feature_engineering(df):
     df['user_test_correct_cnt'] = df.groupby(['userID','testId','retest'])['answerCode'].transform(lambda x: x.cumsum().shift(1))
     df['user_acc'] = df['user_test_correct_cnt']/df['user_test_ans_cnt']
 
-
-    # 아래의 피처는 다이나믹 합니다. 학습된 train의 평균값을 사용하지 않고, 새로 들어온 데이터의 평균 값을 사용합니다.
-    # # testId와 KnowledgeTag의 전체 정답률은 한번에 계산
-    # # 아래 데이터는 제출용 데이터셋에 대해서도 재사용
-    # correct_t = df.groupby(['testId'])['answerCode'].agg(['mean', 'sum'])
-    # correct_t.columns = ["test_mean", 'test_sum']
-    # correct_a = df.groupby(['assessmentItemID'])['answerCode'].agg(['mean', 'sum'])
-    # correct_a.columns = ["ItemID_mean", 'ItemID_sum']
-    # correct_k = df.groupby(['KnowledgeTag'])['answerCode'].agg(['mean', 'sum'])
-    # correct_k.columns = ["tag_mean", 'tag_sum']
-    # df = pd.merge(df, correct_t, on=['testId'], how="left")
-    # df = pd.merge(df, correct_a, on=['assessmentItemID'], how="left")
-    # df = pd.merge(df, correct_k, on=['KnowledgeTag'], how="left")
-
     # 본 피처는 train에서 얻어진 값을 그대로 유지합니다.
     df["test_mean"] = df.testId.map(testId_mean_sum['mean'])
     df['test_sum'] = df.testId.map(testId_mean_sum['sum'])
