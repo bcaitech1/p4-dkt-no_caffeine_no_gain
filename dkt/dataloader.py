@@ -16,7 +16,6 @@ class Preprocess:
         self.train_data = None
         self.valid_data = None
         self.test_data = None
-        
 
     def get_train_data(self):
         return self.train_data
@@ -27,7 +26,11 @@ class Preprocess:
     def get_test_data(self):
         return self.test_data
 
-    def sliding_window(self, data, args):
+
+    def sliding_window(self):
+        args = self.args
+        data = self.train_data
+        
         window_size = args.max_seq_len
         stride = args.stride
 
@@ -51,7 +54,7 @@ class Preprocess:
                     # Shuffle
                     # 마지막 데이터의 경우 shuffle을 하지 않는다
                     if args.shuffle and window_i + 1 != total_window:
-                        shuffle_datas = shuffle(window_data, window_size, args)
+                        shuffle_datas = self.shuffle(window_data, window_size, args)
                         augmented_datas += shuffle_datas
                     else:
                         augmented_datas.append(tuple(window_data))
@@ -64,8 +67,7 @@ class Preprocess:
                         window_data.append(col[-window_size:])
                     augmented_datas.append(tuple(window_data))
 
-
-        return augmented_datas
+        return np.array(augmented_datas)
 
     def shuffle(self, data, data_size, args):
         shuffle_datas = []
@@ -84,37 +86,38 @@ class Preprocess:
         np.save(le_path, encoder.classes_)
 
 
-    def __preprocessing(self, df, is_train=True):
+    def __preprocessing(self, train_df, valid_df=None, is_train=True):
         cate_cols = self.args.USE_COLUMN
 
         if not os.path.exists(self.args.asset_dir):
             os.makedirs(self.args.asset_dir)
             
+        all_df = pd.concat([train_df, valid_df])
         for col in cate_cols:            
             le = LabelEncoder()
             if is_train:
                 #For UNKNOWN class
-                a = df[col].unique().tolist() + ['unknown']
+                a = all_df[col].unique().tolist() + ['unknown']
                 le.fit(a)
                 self.__save_labels(le, col)
             else:
                 label_path = os.path.join(self.args.asset_dir,col+'_classes.npy')
                 le.classes_ = np.load(label_path)
-                
-                df[col] = df[col].apply(lambda x: x if x in le.classes_ else 'unknown')
+                train_df[col] = train_df[col].apply(lambda x: x if x in le.classes_ else 'unknown')
+
             #모든 컬럼이 범주형이라고 가정
-            df[col]= df[col].astype(str)
-            test = le.transform(df[col])
-            df[col] = test
+            train_df[col]= train_df[col].astype(str)
+            test = le.transform(train_df[col])
+            train_df[col] = test
             
 
         def convert_time(s):
             timestamp = time.mktime(datetime.strptime(s, '%Y-%m-%d %H:%M:%S').timetuple())
             return int(timestamp) 
 
-        df['Timestamp'] = df['Timestamp'].apply(convert_time)
+        train_df['Timestamp'] = train_df['Timestamp'].apply(convert_time)
         
-        return df
+        return train_df
 
     def __feature_engineering(self, df):
 
@@ -159,71 +162,63 @@ class Preprocess:
     def df_apply_function(self, r):
         return tuple([r[x].values for x in self.args.USE_COLUMN] + [r[x].values for x in self.args.ANSWER_COLUMN])
 
-    def load_data_from_file(self, file_name, is_train=True):
-        csv_file_path = os.path.join(self.args.data_dir, file_name)
-        df = pd.read_csv(csv_file_path)#, nrows=100000)
-        df = self.__feature_engineering(df)
-        df = self.__preprocessing(df, is_train)
+    def load_data_from_file(self, train_file_name, valid_file_name=None, is_train=True):
+        csv_file_path = os.path.join(self.args.data_dir, train_file_name)
+        train_df = pd.read_csv(csv_file_path)#, nrows=100000)
+        train_df = self.__feature_engineering(train_df)
+        valid_df = None
+        if is_train:
+            csv_file_path = os.path.join(self.args.data_dir, valid_file_name)
+            valid_df = pd.read_csv(csv_file_path)
+            valid_df = self.__feature_engineering(valid_df)
+        train_df = self.__preprocessing(train_df, valid_df, is_train)
         
         # 추후 feature를 embedding할 시에 embedding_layer의 input 크기를 결정할때 사용
         self.args.n_embedding_layers = []       # 나중에 사용할 떄 embedding key들을 저장
-        for idx, val in enumerate(self.args.USE_COLUMN):
+        for val in self.args.USE_COLUMN:
             self.args.n_embedding_layers.append(len(np.load(os.path.join(self.args.asset_dir, val+'_classes.npy'))))
 
 
-        df = df.sort_values(by=['userID','Timestamp'], axis=0)
+        train_df = train_df.sort_values(by=['userID','Timestamp'], axis=0)
         columns = self.args.USERID_COLUMN+self.args.USE_COLUMN+self.args.ANSWER_COLUMN
-        group = df[columns].groupby('userID').apply(
+        group = train_df[columns].groupby('userID').apply(
                 self.df_apply_function
             )
+    
+        return group.values
 
-        if not is_train or not self.args.split_data:
-            return group.values
-        
-        splited_file_name = file_name.split('.')[0] + '_splited' + '.pkl'
-        splited_file_path = os.path.join(self.args.data_dir, splited_file_name)
-        if os.path.exists(splited_file_path):
-            aug = pd.read_pickle(splited_file_path)
-            print(f"{splited_file_name} is loaded!")
-        else:
-            print("There is no splited data.")
+
+    def load_train_data(self, train_file, valid_file):   
+        self.train_data = self.load_data_from_file(train_file, valid_file)
+        print("train data is loaded!")
+        print()
             
-            aug = group.copy()
-            idx = 0
-            n_col = len(columns)-1
-            for ft in tqdm(group):
-                total = len(ft[0])
-                quot, rem = total//self.args.max_seq_len, total%self.args.max_seq_len
+        if self.args.window:
+            augmented_train_numpy_name = train_file.split('.')[0] + '_msl' + str(self.args.max_seq_len) + '_st' + str(self.args.stride) + '.npy'
+            augmented_train_numpy_path = os.path.join(self.args.data_dir, augmented_train_numpy_name)
                 
-                if rem != 0:
-                    first = np.zeros((n_col, self.args.max_seq_len), dtype=np.int16)
-                    for c in range(n_col):
-                        first[c][-rem:] = ft[c][:rem]
-                    aug.loc[idx] = tuple(first)
-                    idx += 1
-
-                for q in range(quot):
-                    row = []
-                    for c in range(n_col):
-                        row.append(ft[c][rem+q*self.args.max_seq_len : rem+(q+1)*self.args.max_seq_len])
-                    aug.loc[idx] = tuple(row)
-                    idx += 1
+            if os.path.exists(augmented_train_numpy_path):
+                print(f"{augmented_train_numpy_name} exists!")
+                self.train_data = np.load(augmented_train_numpy_path, allow_pickle=True)
+                print(f"{augmented_train_numpy_name} is loaded!")
+            else:
+                print(f"{augmented_train_numpy_name} doesn't exist!")
+                self.train_data = self.sliding_window()
+                np.save(augmented_train_numpy_path, self.train_data)
+                print(f"{augmented_train_numpy_name} is saved!")
+            print()
+            
                 
-            aug.to_pickle(splited_file_path)
-            print(f"{splited_file_name} is saved!")
+    def load_valid_data(self, valid_file):
+        self.valid_data = self.load_data_from_file(valid_file, is_train=False)
+        print("valid data is loaded!")
+        print()
+        
 
-        print(f"aug len is {len(aug)}")
-        return aug.values
-
-
-    def load_train_data(self, file_name):
-        self.train_data = self.load_data_from_file(file_name)
-
-    def load_valid_data(self, file_name):
-        self.valid_data = self.load_data_from_file(file_name, is_train=False)
-
-    def load_test_data(self, file_name):
-        self.test_data = self.load_data_from_file(file_name, is_train=False)
+    def load_test_data(self, test_file):
+        self.test_data = self.load_data_from_file(test_file, is_train=False)
+        print("test data is loaded!")
+        print()
 
 
 class DKTDataset(torch.utils.data.Dataset):

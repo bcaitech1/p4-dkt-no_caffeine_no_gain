@@ -42,11 +42,13 @@ def parse_args(mode='train'):
     parser.add_argument('--clip_grad', default=10, type=int, help='clip grad')
     parser.add_argument('--patience', default=5, type=int, help='for early stopping')
     parser.add_argument('--split_data', default=0, type=int, help='split data')
+    parser.add_argument('--is_decoder', default=True, type=bool, help='transformer decoder')
 
     # Sliding Window
     parser.add_argument('--window', default=False, type=bool, help='Sliding Window augmentation')
     parser.add_argument('--shuffle', default=False, type=bool, help='Shuffle sliding window')
-    parser.add_argument('--stride', default=1, type=int, help='Sliding Window stride')
+    parser.add_argument('--stride', default=20, type=int, help='Sliding Window stride')
+    parser.add_argument('--shuffle_n', default=1, type=int, help='Shuffle times')
 
     # T-Fixup
     parser.add_argument('--Tfixup', default=False, type=bool, help='Using T-Fixup')
