@@ -136,6 +136,7 @@ class LSTMATTN(nn.Module):
             intermediate_size=self.hidden_dim,
             hidden_dropout_prob=self.drop_out,
             attention_probs_dropout_prob=self.drop_out,
+            is_decoder=self.args.is_decoder
         )
         self.attn = BertEncoder(self.config)            
     
@@ -630,7 +631,8 @@ class TfixupBert(nn.Module):
             hidden_size=self.hidden_dim,
             num_hidden_layers=self.args.n_layers,
             num_attention_heads=self.args.n_heads,
-            max_position_embeddings=self.args.max_seq_len          
+            max_position_embeddings=self.args.max_seq_len,
+            is_decoder=self.args.is_decoder         
         )
 
         # Defining the layers
