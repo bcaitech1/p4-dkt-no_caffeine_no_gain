@@ -15,3 +15,6 @@ output/
 
 # no pycache
 __pycache__
+
+# ignore .idea folder
+.idea

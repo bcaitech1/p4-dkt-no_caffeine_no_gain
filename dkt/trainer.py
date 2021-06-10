@@ -1,16 +1,17 @@
 import os
 import torch
 import numpy as np
-
+import json
 
 from .dataloader import get_loaders
 from .optimizer import get_optimizer
 from .scheduler import get_scheduler
 from .criterion import get_criterion
 from .metric import get_metric
-from .model import LSTM, LSTMATTN, Bert
+from .model import LSTM, LSTMATTN, Bert, LastQuery, TfixupBert
 
 import wandb
+
 
 def run(args, train_data, valid_data):
     train_loader, valid_loader = get_loaders(args, train_data, valid_data)
@@ -18,6 +19,18 @@ def run(args, train_data, valid_data):
     # only when using warmup scheduler
     args.total_steps = int(len(train_loader.dataset) / args.batch_size) * (args.n_epochs)
     args.warmup_steps = args.total_steps // 10
+
+    print(args)
+    model_dir = os.path.join(args.model_dir, args.model_name)
+    os.makedirs(model_dir, exist_ok=True)
+    json.dump(
+        vars(args),
+        open(f"{model_dir}/exp_config.json", "w"),
+        indent=2,
+        ensure_ascii=False,
+    )
+    
+    print(f"\n{model_dir}/exp_config.json is saved!\n")
             
     model = get_model(args)
     optimizer = get_optimizer(model, args)
@@ -27,26 +40,29 @@ def run(args, train_data, valid_data):
     early_stopping_counter = 0
     for epoch in range(args.n_epochs):
 
-        print(f"Start Training: Epoch {epoch + 1}")
+        print(f"Start Training: Epoch {epoch}")
         
         ### TRAIN
         train_auc, train_acc, train_loss = train(train_loader, model, optimizer, args)
         
         ### VALID
-        auc, acc,_ , _ = validate(valid_loader, model, args)
+        auc, acc, val_loss = validate(valid_loader, model, args)
 
         ### TODO: model save or early stopping
-        wandb.log({"epoch": epoch, "train_loss": train_loss, "train_auc": train_auc, "train_acc":train_acc,
-                  "valid_auc":auc, "valid_acc":acc})
+        if args.use_wandb:
+            wandb.log({"train_loss": train_loss, "train_auc": train_auc, "train_acc": train_acc,
+                       "val_loss": val_loss, "valid_auc": auc, "valid_acc": acc})
+
         if auc > best_auc:
             best_auc = auc
             # torch.nn.DataParallel로 감싸진 경우 원래의 model을 가져옵니다.
             model_to_save = model.module if hasattr(model, 'module') else model
+            model_name = 'model_epoch' + str(epoch) + ".pt"
             save_checkpoint({
-                'epoch': epoch + 1,
+                'epoch': epoch,
                 'state_dict': model_to_save.state_dict(),
                 },
-                 args.model_dir, (args.model_name + ".pt"),
+                 model_dir, model_name,
             )
             early_stopping_counter = 0
         else:
@@ -71,8 +87,8 @@ def train(train_loader, model, optimizer, args):
     for step, batch in enumerate(train_loader):
         input = process_batch(batch, args)
         preds = model(input)
-        targets = input[3] # correct
 
+        targets = input[-4] # correct
 
         loss = compute_loss(preds, targets)
         update_params(loss, model, optimizer, args)
@@ -111,12 +127,15 @@ def validate(valid_loader, model, args):
 
     total_preds = []
     total_targets = []
+    losses = []
     for step, batch in enumerate(valid_loader):
         input = process_batch(batch, args)
 
         preds = model(input)
-        targets = input[3] # correct
 
+        targets = input[-4] # correct
+
+        loss = compute_loss(preds, targets)
 
         # predictions
         preds = preds[:,-1]
@@ -131,16 +150,19 @@ def validate(valid_loader, model, args):
 
         total_preds.append(preds)
         total_targets.append(targets)
+        losses.append(loss)
 
     total_preds = np.concatenate(total_preds)
     total_targets = np.concatenate(total_targets)
 
     # Train AUC / ACC
     auc, acc = get_metric(total_targets, total_preds)
+    loss_avg = sum(losses)/len(losses)
     
+    print(f"Valid Loss: {str(loss_avg)}")
     print(f'VALID AUC : {auc} ACC : {acc}\n')
 
-    return auc, acc, total_preds, total_targets
+    return auc, acc, loss_avg
 
 
 
@@ -170,7 +192,7 @@ def inference(args, test_data):
             
         total_preds+=list(preds)
 
-    write_path = os.path.join(args.output_dir, (args.output_file + ".csv"))
+    write_path = os.path.join(args.output_dir, (args.model_name + "_epoch" + str(args.model_epoch) + ".csv"))
     if not os.path.exists(args.output_dir):
         os.makedirs(args.output_dir)    
     with open(write_path, 'w', encoding='utf8') as w:
@@ -189,8 +211,9 @@ def get_model(args):
     if args.model == 'lstm': model = LSTM(args)
     if args.model == 'lstmattn': model = LSTMATTN(args)
     if args.model == 'bert': model = Bert(args)
+    if args.model == 'lastquery' : model = LastQuery(args)
+    if args.model == 'tfixupbert': model = TfixupBert(args)
     
-
     model.to(args.device)
 
     return model
@@ -199,8 +222,11 @@ def get_model(args):
 # 배치 전처리
 def process_batch(batch, args):
 
-    test, question, tag, correct, mask = batch
-    
+
+    features = batch[:-2]
+    correct = batch[-2]
+    mask = batch[-1]
+
     
     # change to float
     mask = mask.type(torch.FloatTensor)
@@ -212,12 +238,9 @@ def process_batch(batch, args):
     interaction = interaction.roll(shifts=1, dims=1)
     interaction[:, 0] = 0 # set padding index to the first sequence
     interaction = (interaction * mask).to(torch.int64)
-    # print(interaction)
-    # exit()
-    #  test_id, question_id, tag
-    test = ((test + 1) * mask).to(torch.int64)
-    question = ((question + 1) * mask).to(torch.int64)
-    tag = ((tag + 1) * mask).to(torch.int64)
+
+    features = [((feature + 1) * mask).to(torch.int64) for feature in features]
+
 
     # gather index
     # 마지막 sequence만 사용하기 위한 index
@@ -226,21 +249,18 @@ def process_batch(batch, args):
 
 
     # device memory로 이동
+    features = [feature.to(args.device) for feature in features]
 
-    test = test.to(args.device)
-    question = question.to(args.device)
-
-
-    tag = tag.to(args.device)
     correct = correct.to(args.device)
     mask = mask.to(args.device)
-
     interaction = interaction.to(args.device)
     gather_index = gather_index.to(args.device)
 
-    return (test, question,
-            tag, correct, mask,
-            interaction, gather_index)
+
+    output = tuple(features + [correct, mask, interaction, gather_index])
+
+    return output
+
 
 
 # loss계산하고 parameter update!
@@ -275,8 +295,8 @@ def save_checkpoint(state, model_dir, model_filename):
 
 def load_model(args):
     
-    
-    model_path = os.path.join(args.model_dir, (args.model_name + ".pt"))
+    model_dir = os.path.join(args.model_dir, args.model_name)
+    model_path = os.path.join(model_dir, ('model_epoch' + str(args.model_epoch) + ".pt"))
     print("Loading Model from:", model_path)
     load_state = torch.load(model_path)
     model = get_model(args)

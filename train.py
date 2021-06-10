@@ -5,21 +5,27 @@ from dkt import trainer
 import torch
 from dkt.utils import setSeeds
 import wandb
+
 def main(args):
-    wandb.login()
-    
+    if args.use_wandb:
+        wandb.login()
+        wandb.init(project='dkt', config=vars(args))
     
     setSeeds(42) 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     args.device = device
 
     preprocess = Preprocess(args)
-    preprocess.load_train_data(args.file_name)
+    preprocess.load_train_data(args.train_file_name, args.valid_file_name)
+    preprocess.load_valid_data(args.valid_file_name)
     train_data = preprocess.get_train_data()
-    
-    train_data, valid_data = preprocess.split_data(train_data)
-    
-    wandb.init(project='dkt', config=vars(args)) 
+    valid_data = preprocess.get_valid_data()
+
+    print()
+    print(f"# of train_data : {len(train_data)}")
+    print(f"# of valid_data : {len(valid_data)}")
+    print()
+
     trainer.run(args, train_data, valid_data)
     
 
