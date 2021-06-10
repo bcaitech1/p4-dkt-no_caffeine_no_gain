@@ -13,8 +13,8 @@ def parse_args(mode='train'):
     parser.add_argument('--data_dir', default='/opt/ml/input/data/train_dataset', type=str, help='data directory')
     parser.add_argument('--asset_dir', default='asset/', type=str, help='data directory')
     
-    parser.add_argument('--train_file_name', default='fixed_train.csv', type=str, help='train file name')
-    parser.add_argument('--valid_file_name', default='fixed_valid.csv', type=str, help='valid file name')
+    parser.add_argument('--train_file_name', default='original_fixed_train.csv', type=str, help='train file name')
+    parser.add_argument('--valid_file_name', default='original_fixed_valid.csv', type=str, help='valid file name')
     
     parser.add_argument('--model_dir', default='models/', type=str, help='model directory')
 
@@ -41,7 +41,6 @@ def parse_args(mode='train'):
     parser.add_argument('--lr', default=0.0001, type=float, help='learning rate')
     parser.add_argument('--clip_grad', default=10, type=int, help='clip grad')
     parser.add_argument('--patience', default=5, type=int, help='for early stopping')
-    parser.add_argument('--split_data', default=0, type=int, help='split data')
     parser.add_argument('--is_decoder', default=True, type=bool, help='transformer decoder')
 
     # Sliding Window
