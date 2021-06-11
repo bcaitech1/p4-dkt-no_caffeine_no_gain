@@ -16,7 +16,7 @@ def main(args):
     args.device = device
 
     preprocess = Preprocess(args)
-    preprocess.load_train_data(args.train_file_name, args.valid_file_name)
+    preprocess.load_train_data(args.train_file_name,args.valid_file_name)
     preprocess.load_valid_data(args.valid_file_name)
     train_data = preprocess.get_train_data()
     valid_data = preprocess.get_valid_data()
@@ -25,8 +25,11 @@ def main(args):
     print(f"# of train_data : {len(train_data)}")
     print(f"# of valid_data : {len(valid_data)}")
     print()
-
-    trainer.run(args, train_data, valid_data)
+    
+    if args.model == 'tabnet':
+        trainer.tabnet_run(args, train_data, valid_data)
+    else:
+        trainer.run(args, train_data, valid_data)
     
 
 if __name__ == "__main__":

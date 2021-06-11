@@ -13,8 +13,9 @@ def parse_args(mode='train'):
     parser.add_argument('--data_dir', default='/opt/ml/input/data/train_dataset', type=str, help='data directory')
     parser.add_argument('--asset_dir', default='asset/', type=str, help='data directory')
     
-    parser.add_argument('--train_file_name', default='original_fixed_train.csv', type=str, help='train file name')
-    parser.add_argument('--valid_file_name', default='original_fixed_valid.csv', type=str, help='valid file name')
+    parser.add_argument('--train_file_name', default='fixed_train.csv', type=str, help='train file name')
+    parser.add_argument('--valid_file_name', default='fixed_valid.csv', type=str, help='valid file name')
+    parser.add_argument('--test_file_name', default='fixed_test.csv', type=str, help='test file name')
     
     parser.add_argument('--model_dir', default='models/', type=str, help='model directory')
 
@@ -23,7 +24,7 @@ def parse_args(mode='train'):
 
     parser.add_argument('--output_dir', default='output/', type=str, help='output directory')
     parser.add_argument('--output_file', default='output', type=str, help='output directory')
-    parser.add_argument('--test_file_name', default='test_data_add_elapsed.csv', type=str, help='test file name')
+   
     
     parser.add_argument('--max_seq_len', default=20, type=int, help='max sequence length')
     parser.add_argument('--num_workers', default=1, type=int, help='number of workers')
@@ -35,6 +36,20 @@ def parse_args(mode='train'):
     parser.add_argument('--drop_out', default=0.2, type=float, help='drop out rate')
     parser.add_argument('--dim_div', default=3, type=int, help='model에서 dimension이 커지는 것을 방지')
 
+    # TabNet
+    parser.add_argument('--tabnet_pretrain', default=False, type=bool, help='tabnet pretrain')
+    parser.add_argument('--use_test_to_train', default=False, type=bool, help='train with testset')
+    parser.add_argument('--tabnet_scheduler', default='steplr', type=str, help='tabnet_scheduler')
+    parser.add_argument('--tabnet_optimizer', default='adam', type=str, help='tabnet_optimizer')
+    parser.add_argument('--tabnet_lr', default=2e-2, type=float, help='tabnet_lr')
+    parser.add_argument('--tabnet_batchsize', default=16384, type=int, help='tabnet_batchsize')
+    parser.add_argument('--tabnet_n_step', default=10, type=int, help='tabnet_n_step(not log step)')
+    parser.add_argument('--tabnet_gamma', default=0.9, type=float, help='tabnet_gamma')
+    parser.add_argument('--tabnet_mask_type', default='sparsemax', type=str, help='tabnet_mask_type')
+    parser.add_argument('--tabnet_virtual_batchsize', default=256, type=int, help='tabnet_virtual_batchsize')
+    parser.add_argument('--tabnet_pretraining_ratio', default=0.8, type=float, help='tabnet_pretraining_ratio')
+    
+    
     # 훈련
     parser.add_argument('--n_epochs', default=20, type=int, help='number of epochs')
     parser.add_argument('--batch_size', default=64, type=int, help='batch size')

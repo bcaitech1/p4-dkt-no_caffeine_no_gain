@@ -8,10 +8,75 @@ from .optimizer import get_optimizer
 from .scheduler import get_scheduler
 from .criterion import get_criterion
 from .metric import get_metric
-from .model import LSTM, LSTMATTN, Bert, LastQuery, TfixupBert
+from .model import LSTM, LSTMATTN, Bert, LastQuery, TfixupBert, TabNet
+from pytorch_tabnet.tab_model import TabNetClassifier
+from pytorch_tabnet.pretraining import TabNetPretrainer
+from datetime import timedelta, timezone, datetime
 
 import wandb
 
+def tabnet_run(args, train_data, valid_data):
+    print(args)
+    model_dir = os.path.join(args.model_dir, args.model_name)
+    os.makedirs(model_dir, exist_ok=True)
+    json.dump(
+        vars(args),
+        open(f"{model_dir}/exp_config.json", "w"),
+        indent=2,
+        ensure_ascii=False,
+    )
+    print(f"\n{model_dir}/exp_config.json is saved!\n")
+    
+    y_t = train_data['answerCode'].values
+    train_data.pop('answerCode')
+    x_t = train_data.values
+   
+    y_v = valid_data['answerCode'].values
+    valid_data.pop('answerCode')
+    x_v = valid_data.values
+    
+    if args.tabnet_pretrain:
+        model = get_tabnet_model(args)
+        pre_model, model = model.forward()
+        pre_model.fit(
+            X_train=train_data,
+            eval_set=[valid_data],
+            pretraining_ratio=args.tabnet_pretraining_ratio
+        )
+        pre_model.save_model(f"{model_dir}/pre_model")
+        model.fit(
+            X_train=x_t, y_train=y_t,
+            eval_set=[(x_t, y_t), (x_v, y_v)],
+            eval_name=['train', 'valid'],
+            max_epochs=args.n_epochs, patience=args.patience,
+            eval_metric=['auc', 'accuracy'],
+            batch_size=args.tabnet_batchsize, virtual_batch_size=args.tabnet_virtual_batchsize,
+            from_unsupervised=pre_model
+        )
+        model.save_model(f"{model_dir}/model")
+    ################################################
+        if args.use_wandb:
+            # 이거 성공하면 valid_loss랑 train_loss도 넣어보는겨
+            wandb.log({"train_auc": model.history['train_auc'], "train_acc": model.history['train_acc'], "valid_auc": model.history['valid_auc'], "valid_acc": model.history['valid_acc'], "loss" : model.history['loss']})
+            
+
+    else:
+        model = get_tabnet_model(args)
+        model = model.forward()
+        model.fit(
+            X_train=x_t, y_train=y_t,
+            eval_set=[(x_t, y_t), (x_v, y_v)],
+            eval_name=['train', 'valid'],
+            max_epochs=args.n_epochs, patience=args.patience,
+            eval_metric=['auc', 'accuracy'],
+            batch_size=args.tabnet_batchsize, virtual_batch_size=args.tabnet_virtual_batchsize,
+        )
+        model.save_model(f"{model_dir}/model")
+        if args.use_wandb:
+            # 이거 성공하면 valid_loss랑 train_loss도 넣어보는겨
+            wandb.log({"train_auc": model.history['train_auc'], "train_acc": model.history['train_acc'], "valid_auc": model.history['valid_auc'], "valid_acc": model.history['valid_acc'], "loss" : model.history['loss']})
+
+            
 
 def run(args, train_data, valid_data):
     train_loader, valid_loader = get_loaders(args, train_data, valid_data)
@@ -164,6 +229,25 @@ def validate(valid_loader, model, args):
 
     return auc, acc, loss_avg
 
+def tabnet_inference(args, test_data):
+    model_dir = os.path.join(args.model_dir, args.model_name)
+    loaded_clf = TabNetClassifier()
+    loaded_clf.load_model(f"{model_dir}/model.zip")
+    test_data.pop('answerCode')
+    loaded_preds = loaded_clf.predict_proba(test_data.values[:])
+    preds = loaded_preds[:, 1]
+    
+    prediction_name = datetime.now(timezone(timedelta(hours=9))).strftime('%m%d_%H%M')
+
+    output_dir = '/opt/ml/p4-dkt-no_caffeine_no_gain/output/'
+    write_path = os.path.join(output_dir, f"{prediction_name}.csv")
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)    
+    with open(write_path, 'w', encoding='utf8') as w:
+        print("writing prediction : {}".format(write_path))
+        w.write("id,prediction\n")
+        for id, p in enumerate(preds):
+            w.write('{},{}\n'.format(id,p))
 
 
 def inference(args, test_data):
@@ -200,8 +284,19 @@ def inference(args, test_data):
         w.write("id,prediction\n")
         for id, p in enumerate(total_preds):
             w.write('{},{}\n'.format(id,p))
+            
 
 
+def get_tabnet_model(args):
+    if args.tabnet_pretrain:
+        pretrain_model,model = TabNet(args)
+        pretrain_model.to(args.device)
+        model.to(args.device)
+        return pretrain_model, model
+    else:
+        model = TabNet(args)
+        model.to(args.device)
+        return model
 
 
 def get_model(args):
@@ -213,7 +308,7 @@ def get_model(args):
     if args.model == 'bert': model = Bert(args)
     if args.model == 'lastquery' : model = LastQuery(args)
     if args.model == 'tfixupbert': model = TfixupBert(args)
-    
+        
     model.to(args.device)
 
     return model

@@ -123,7 +123,7 @@ class Preprocess:
 
         self.args.USERID_COLUMN = ['userID']
         self.args.ANSWER_COLUMN = ['answerCode']
-        self.args.USE_COLUMN = ['testId', 'assessmentItemID','KnowledgeTag', 'elapsed', 'time_bin', 'classification', 'paperNum', 'problemNum']
+        self.args.USE_COLUMN = ['assessmentItemID','testId', 'KnowledgeTag', 'item','item_order','user_total_correct_cnt','user_total_ans_cnt','user_total_acc','test_size', 'retest','user_test_ans_cnt', 'user_test_correct_cnt','user_acc','test_mean','test_sum','ItemID_mean', 'ItemID_sum','tag_mean','tag_sum', 'elapsed','time_bin', 'classification', 'paperNum', 'problemNum']
         self.args.EXCLUDE_COLUMN = ['Timestamp', 'hours']
         
         # use 3 features instead testId, assessmentItemID
@@ -165,6 +165,15 @@ class Preprocess:
     def load_data_from_file(self, train_file_name, valid_file_name=None, is_train=True):
         csv_file_path = os.path.join(self.args.data_dir, train_file_name)
         train_df = pd.read_csv(csv_file_path)#, nrows=100000)
+        
+        # args.use_test_to_train이 True일때 test셋도 학습에 사용
+        if self.args.use_test_to_train:
+            csv_file_path = os.path.join(self.args.data_dir, self.args.test_file_name)
+            test_df = pd.read_csv(csv_file)
+            test_df = test_df[test_df.answerCode != -1].copy()
+            train_df += test_df
+            print("test셋 학습에 추가!")
+            
         train_df = self.__feature_engineering(train_df)
         valid_df = None
         if is_train:
@@ -184,9 +193,10 @@ class Preprocess:
         group = train_df[columns].groupby('userID').apply(
                 self.df_apply_function
             )
-    
-        return group.values
-
+        if self.args.model =='tabnet':
+            g = train_df[self.args.USERID_COLUMN + self.args.USE_COLUMN+self.args.ANSWER_COLUMN]
+            return g
+        return group.values        
 
     def load_train_data(self, train_file, valid_file):   
         self.train_data = self.load_data_from_file(train_file, valid_file)

@@ -19,8 +19,12 @@ def main(args):
     config = json.load(open(f"{model_dir}/exp_config.json", "r"))
     config['model_epoch'] = args.model_epoch
     args = argparse.Namespace(**config)
-
-    trainer.inference(args, test_data)
+    
+    if args.model == 'tabnet':
+        test_data_shift = test_data[test_data['userID'] != test_data['userID'].shift(-1)]
+        trainer.tabnet_inference(args, test_data_shift)
+    else:
+        trainer.inference(args, test_data)
     
 
 if __name__ == "__main__":
