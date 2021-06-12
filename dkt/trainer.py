@@ -17,8 +17,15 @@ from datetime import timedelta, timezone, datetime
 
 import wandb
 
-def tabnet_run(args, train_data, valid_data):
+def tabnet_run(args, train_data, valid_data, test_data):
     print(args)
+    if args.use_pseudo:
+        pseudo_labels = pd.read_csv(args.pseudo_label_file) # '/opt/ml/p4-dkt-no_caffeine_no_gain/highest.csv'
+        pseudo_labels = pseudo_labels['prediction'].to_numpy()
+        pseudo_labels = np.where(pseudo_labels >= 0.5, 1, 0)
+
+        pseudo_train_data = update_train_data(pseudo_labels, train_data, test_data)
+        train_data = pseudo_train_data
     model_dir = os.path.join(args.model_dir, args.model_name)
     os.makedirs(model_dir, exist_ok=True)
     json.dump(
