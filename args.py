@@ -52,6 +52,10 @@ def parse_args(mode='train'):
     # T-Fixup
     parser.add_argument('--Tfixup', default=False, type=bool, help='Using T-Fixup')
     parser.add_argument('--layer_norm', default=False, type=bool, help='T-Fixup with layer norm')
+
+    # Pseudo Labeling
+    parser.add_argument('--use_pseudo', default=False, type=bool, help='Using Pseudo labeling')
+    parser.add_argument('--pseudo_label_file', default='', type=str, help='file path for pseudo labeling')
     
     # log
     parser.add_argument('--log_steps', default=50, type=int, help='print log per n steps')

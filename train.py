@@ -2,6 +2,7 @@ import os
 from args import parse_args
 from dkt.dataloader import Preprocess
 from dkt import trainer
+from dkt.trainer import update_train_data
 import torch
 from dkt.utils import setSeeds
 import wandb
@@ -20,13 +21,12 @@ def main(args):
     preprocess.load_valid_data(args.valid_file_name)
     train_data = preprocess.get_train_data()
     valid_data = preprocess.get_valid_data()
+    test_data = None
+    if args.use_pseudo:
+        preprocess.load_test_data(args.test_file_name)
+        test_data = preprocess.get_test_data()
 
-    print()
-    print(f"# of train_data : {len(train_data)}")
-    print(f"# of valid_data : {len(valid_data)}")
-    print()
-
-    trainer.run(args, train_data, valid_data)
+    trainer.run(args, train_data, valid_data, test_data)
     
 
 if __name__ == "__main__":
