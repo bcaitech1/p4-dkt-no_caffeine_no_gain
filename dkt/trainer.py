@@ -8,7 +8,7 @@ from .optimizer import get_optimizer
 from .scheduler import get_scheduler
 from .criterion import get_criterion
 from .metric import get_metric
-from .model import LSTM, LSTMATTN, Bert, LastQuery, TfixupBert, TabNet
+from .model import LSTM, LSTMATTN, Bert, LastQuery, TfixupBert, Saint, TabNet
 from pytorch_tabnet.tab_model import TabNetClassifier
 from pytorch_tabnet.pretraining import TabNetPretrainer
 from datetime import timedelta, timezone, datetime
@@ -325,11 +325,15 @@ def get_model(args):
     Load model and move tensors to a given devices.
     """
     if args.model == 'lstm': model = LSTM(args)
-    if args.model == 'lstmattn': model = LSTMATTN(args)
-    if args.model == 'bert': model = Bert(args)
-    if args.model == 'lastquery' : model = LastQuery(args)
-    if args.model == 'tfixupbert': model = TfixupBert(args)
-        
+    elif args.model == 'lstmattn': model = LSTMATTN(args)
+    elif args.model == 'bert': model = Bert(args)
+    elif args.model == 'lastquery' : model = LastQuery(args)
+    elif args.model == 'tfixupbert': model = TfixupBert(args)
+    elif args.model == 'saint': model = Saint(args)
+    else:
+        print("Invalid model!")
+        exit()
+    
     model.to(args.device)
 
     return model
