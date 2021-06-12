@@ -25,18 +25,11 @@ def main(args):
     if args.use_pseudo:
         preprocess.load_test_data(args.test_file_name)
         test_data = preprocess.get_test_data()
-
-    trainer.run(args, train_data, valid_data, test_data)
-    
-    print()
-    print(f"# of train_data : {len(train_data)}")
-    print(f"# of valid_data : {len(valid_data)}")
-    print()
     
     if args.model == 'tabnet':
-        trainer.tabnet_run(args, train_data, valid_data)
+        trainer.tabnet_run(args, train_data, valid_data, test_data)
     else:
-        trainer.run(args, train_data, valid_data)
+        trainer.run(args, train_data, valid_data, test_data)
     
 
 if __name__ == "__main__":
