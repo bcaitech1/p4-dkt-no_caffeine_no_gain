@@ -10,9 +10,9 @@ dtype = {
 
 # 데이터 경로 맞춰주세요!
 DATA_PATH = '/opt/ml/input/data/train_dataset'
-train_org_df = pd.read_csv(os.path.join(DATA_PATH, "train_data.csv"), dtype=dtype, parse_dates=['Timestamp'])
+train_org_df = pd.read_csv(os.path.join(DATA_PATH, "train_data_add_elapsed.csv"), dtype=dtype, parse_dates=['Timestamp'])
 train_org_df = train_org_df.sort_values(by=['userID', 'Timestamp']).reset_index(drop=True)
-test_org_df = pd.read_csv(os.path.join(DATA_PATH, "test_data.csv"), dtype=dtype, parse_dates=['Timestamp'])
+test_org_df = pd.read_csv(os.path.join(DATA_PATH, "test_data_add_elapsed.csv"), dtype=dtype, parse_dates=['Timestamp'])
 test_org_df = test_org_df.sort_values(by=['userID', 'Timestamp']).reset_index(drop=True)
 
 def feature_engineering(df):
@@ -62,29 +62,27 @@ def feature_engineering(df):
     df['user_test_correct_cnt'] = df.groupby(['userID','testId','retest'])['answerCode'].transform(lambda x: x.cumsum().shift(1))
     df['user_acc'] = df['user_test_correct_cnt']/df['user_test_ans_cnt']
 
-    # 본 피처는 train에서 얻어진 값을 그대로 유지합니다.
-    df["test_mean"] = df.testId.map(testId_mean_sum['mean'])
-    df['test_sum'] = df.testId.map(testId_mean_sum['sum'])
-    df["ItemID_mean"] = df.assessmentItemID.map(assessmentItemID_mean_sum['mean'])
-    df['ItemID_sum'] = df.assessmentItemID.map(assessmentItemID_mean_sum['sum'])
-    df["tag_mean"] = df.KnowledgeTag.map(KnowledgeTag_mean_sum['mean'])
-    df['tag_sum'] = df.KnowledgeTag.map(KnowledgeTag_mean_sum['sum'])
+    correct_t = df.groupby(['testId'])['answerCode'].agg(['mean', 'sum'])
+    correct_t.columns = ["test_mean", 'test_sum']
+    correct_a = df.groupby(['assessmentItemID'])['answerCode'].agg(['mean', 'sum'])
+    correct_a.columns = ["ItemID_mean", 'ItemID_sum']
+    correct_k = df.groupby(['KnowledgeTag'])['answerCode'].agg(['mean', 'sum'])
+    correct_k.columns = ["tag_mean", 'tag_sum']
+    df = pd.merge(df, correct_t, on=['testId'], how="left")
+    df = pd.merge(df, correct_a, on=['assessmentItemID'], how="left")
+    df = pd.merge(df, correct_k, on=['KnowledgeTag'], how="left")
 
     return df
-
-# trian에서 각 문제 평균 뽑기
-
-testId_mean_sum = train_org_df.groupby(['testId'])['answerCode'].agg(['mean','sum']).to_dict()
-assessmentItemID_mean_sum = train_org_df.groupby(['assessmentItemID'])['answerCode'].agg(['mean', 'sum']).to_dict()
-KnowledgeTag_mean_sum = train_org_df.groupby(['KnowledgeTag'])['answerCode'].agg(['mean', 'sum']).to_dict()
 
 # 맞춰야하는 문항 ID 파악
 set_assessmentItemID = set(test_org_df.loc[test_org_df.answerCode == -1, 'assessmentItemID'].values)
 
 train = feature_engineering(train_org_df)
+test = feature_engineering(test_org_df)
 # 피처를 대충만들어서 꽤 오래걸립니다.
 
 train = train.fillna(0)
+test = test.fillna(0)
 
 acc = train.loc[train.userID!=train.userID.shift(-1), ["userID", "user_total_acc", "user_total_ans_cnt"]].sort_values("user_total_acc")
 
@@ -94,12 +92,11 @@ for i in range(len(acc.userID.values)):
         u_id.append(acc.userID.values[i])
 
 print(f"valid로 들어가는 user 비율: {len(u_id) / acc.shape[0]}")
-print(f"valid로 들어가는 row 비율: {train_org_df.loc[train_org_df.userID.isin(u_id), :].shape[0] / train_org_df.shape[0]}")
+print(f"valid로 들어가는 row 비율: {train.loc[train.userID.isin(u_id), :].shape[0] / train.shape[0]}")
 
-train_org_df = pd.read_csv(os.path.join(DATA_PATH, "train_data_add_elapsed.csv"), dtype=dtype, parse_dates=['Timestamp'])
-train_org_df = train_org_df.sort_values(by=['userID', 'Timestamp']).reset_index(drop=True)
+train.loc[~train.userID.isin(u_id), :].to_csv(os.path.join(DATA_PATH, "fixed_train.csv"), index=False)
+train.loc[train.userID.isin(u_id), :].to_csv(os.path.join(DATA_PATH, "fixed_valid.csv"), index=False)
+test.to_csv(os.path.join(DATA_PATH, "fixed_test.csv"), index=False)
 
-train_org_df.loc[~train_org_df.userID.isin(u_id), :].to_csv(os.path.join(DATA_PATH, "fixed_train.csv"), index=False)
-train_org_df.loc[train_org_df.userID.isin(u_id), :].to_csv(os.path.join(DATA_PATH, "fixed_valid.csv"), index=False)
 
 print(f"make fixed_data done")

@@ -1,10 +1,14 @@
 import torch
+import torch.optim
 import torch.nn as nn
 import torch.nn.functional as F 
 import numpy as np
 import copy
 import math
 import re
+import os
+from pytorch_tabnet.tab_model import TabNetClassifier
+from pytorch_tabnet.pretraining import TabNetPretrainer
 
 try:
     from transformers.modeling_bert import BertConfig, BertEncoder, BertModel    
@@ -780,3 +784,53 @@ class EncoderLayer(nn.Module):
             out = self.ln2(out)
 
         return out
+
+class TabNet(nn.Module):
+    def __init__(self, args):
+        super(TabNet, self).__init__()
+        self.args = args
+        self.device = args.device
+        
+        self.optimizer = self.get_optimizer(self.args.tabnet_optimizer)
+        self.scheduler = self.get_scheduler(self.args.tabnet_scheduler)
+        
+        if self.args.tabnet_pretrain:
+            self.unsupervised_model = TabNetPretrainer(
+                optimizer_fn=self.optimizer,
+                optimizer_params=dict(lr=self.args.tabnet_lr),
+                mask_type=self.args.tabnet_mask_type, # "sparsemax",
+                seed=self.args.seed,
+                saving_path=os.path.join(self.args.model_dir, self.args.model_name),
+                )
+            
+        self.clf = TabNetClassifier(
+            optimizer_fn=self.optimizer,
+            optimizer_params=dict(lr=self.args.tabnet_lr),
+            scheduler_params={"step_size":self.args.tabnet_n_step, # how to use learning rate scheduler
+                              "gamma":self.args.tabnet_gamma},
+            scheduler_fn=self.scheduler,
+            mask_type=self.args.tabnet_mask_type, # This will be overwritten if using pretrain model
+            seed=self.args.seed,
+            )
+        
+    def get_optimizer(self, opt):
+        if self.args.tabnet_optimizer == 'adam':
+            optimizer = torch.optim.Adam
+        if self.args.tabnet_optimizer == 'adamW':
+            optimizer = torch.optim.AdamW
+        if self.args.tabnet_optimizer == 'SGD':
+            optimizer = torch.optim.SGD
+        # 모든 parameter들의 grad값을 0으로 초기화
+        return optimizer
+    def get_scheduler(self, sch):
+        if self.args.tabnet_scheduler == 'plateau':
+            scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau
+        elif self.args.tabnet_scheduler == 'steplr':
+            scheduler = torch.optim.lr_scheduler.StepLR
+        return scheduler
+    
+    def forward(self):
+        if self.args.tabnet_pretrain:
+            return self.unsupervised_model, self.clf
+        return self.clf
+            

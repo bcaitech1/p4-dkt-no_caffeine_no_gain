@@ -123,15 +123,17 @@ class Preprocess:
 
         self.args.USERID_COLUMN = ['userID']
         self.args.ANSWER_COLUMN = ['answerCode']
-        self.args.USE_COLUMN = ['testId', 'assessmentItemID','KnowledgeTag', 'elapsed', 'time_bin', 'classification', 'paperNum', 'problemNum']
-        self.args.EXCLUDE_COLUMN = ['Timestamp', 'hours']
+        self.args.USE_COLUMN = ['user_acc','ItemID_mean','test_mean', 'KnowledgeTag','elapsed', 'item_order','user_total_correct_cnt','user_total_ans_cnt',	'user_total_acc', 'test_size', 'retest','user_test_ans_cnt', 'user_test_correct_cnt', 'tag_mean','ItemID_sum','tag_sum','time_bin', 'classification', 'paperNum', 'problemNum', 'item','assessmentItemID','testId', 'hours', 'test_sum']
+        self.args.EXCLUDE_COLUMN = ['Timestamp']
         
+        df['testId'] = df['testId'].str[1:]
+        df['assessmentItemID'] = df['assessmentItemID'].str[1:]
         # use 3 features instead testId, assessmentItemID
         df['classification'] = df['testId'].str[2:3]
         df['paperNum'] = df['testId'].str[-3:]
         df['problemNum'] = df['assessmentItemID'].str[-3:]
 
-        df = df.astype({'Timestamp': 'datetime64[ns]'})
+        df = df.astype({'Timestamp': 'datetime64[ns]', 'classification' : 'int', 'paperNum' : 'int', 'problemNum': 'int', 'assessmentItemID' : 'int'})
         def hours(timestamp):
             return int(str(timestamp).split()[1].split(":")[0])
         
@@ -165,18 +167,29 @@ class Preprocess:
     def load_data_from_file(self, train_file_name, valid_file_name=None, is_train=True):
         csv_file_path = os.path.join(self.args.data_dir, train_file_name)
         train_df = pd.read_csv(csv_file_path)#, nrows=100000)
+        
+        # args.use_test_to_train이 True일때 test셋도 학습에 사용
+        if self.args.use_test_to_train:
+            csv_file_path = os.path.join(self.args.data_dir, self.args.test_file_name)
+            test_df = pd.read_csv(csv_file)
+            test_df = test_df[test_df.answerCode != -1].copy()
+            train_df += test_df
+            print("test셋 학습에 추가!")
+            
         train_df = self.__feature_engineering(train_df)
         valid_df = None
         if is_train:
             csv_file_path = os.path.join(self.args.data_dir, valid_file_name)
             valid_df = pd.read_csv(csv_file_path)
             valid_df = self.__feature_engineering(valid_df)
-        train_df = self.__preprocessing(train_df, valid_df, is_train)
-        
-        # 추후 feature를 embedding할 시에 embedding_layer의 input 크기를 결정할때 사용
-        self.args.n_embedding_layers = []       # 나중에 사용할 떄 embedding key들을 저장
-        for val in self.args.USE_COLUMN:
-            self.args.n_embedding_layers.append(len(np.load(os.path.join(self.args.asset_dir, val+'_classes.npy'))))
+            
+        if self.args.model != 'tabnet':
+            train_df = self.__preprocessing(train_df, valid_df, is_train)
+
+            # 추후 feature를 embedding할 시에 embedding_layer의 input 크기를 결정할때 사용
+            self.args.n_embedding_layers = []       # 나중에 사용할 떄 embedding key들을 저장
+            for val in self.args.USE_COLUMN:
+                self.args.n_embedding_layers.append(len(np.load(os.path.join(self.args.asset_dir, val+'_classes.npy'))))
 
 
         train_df = train_df.sort_values(by=['userID','Timestamp'], axis=0)
@@ -184,9 +197,10 @@ class Preprocess:
         group = train_df[columns].groupby('userID').apply(
                 self.df_apply_function
             )
-    
-        return group.values
-
+        if self.args.model =='tabnet':
+            g = train_df[self.args.USERID_COLUMN + self.args.USE_COLUMN+self.args.ANSWER_COLUMN]
+            return g
+        return group.values        
 
     def load_train_data(self, train_file, valid_file):   
         self.train_data = self.load_data_from_file(train_file, valid_file)
