@@ -27,6 +27,10 @@ def tabnet_run(args, train_data, valid_data):
     )
     print(f"\n{model_dir}/exp_config.json is saved!\n")
     
+    
+    train_data.pop('userID')
+    valid_data.pop('userID')
+    
     y_t = train_data['answerCode'].values
     train_data.pop('answerCode')
     x_t = train_data.values
@@ -34,6 +38,8 @@ def tabnet_run(args, train_data, valid_data):
     y_v = valid_data['answerCode'].values
     valid_data.pop('answerCode')
     x_v = valid_data.values
+    
+    print(x_t.dtype)
     
     if args.tabnet_pretrain:
         model = get_tabnet_model(args)
@@ -49,15 +55,21 @@ def tabnet_run(args, train_data, valid_data):
             eval_set=[(x_t, y_t), (x_v, y_v)],
             eval_name=['train', 'valid'],
             max_epochs=args.n_epochs, patience=args.patience,
-            eval_metric=['auc', 'accuracy'],
+            eval_metric=['auc', 'accuracy', 'logloss'],
             batch_size=args.tabnet_batchsize, virtual_batch_size=args.tabnet_virtual_batchsize,
             from_unsupervised=pre_model
         )
         model.save_model(f"{model_dir}/model")
-    ################################################
         if args.use_wandb:
-            # 이거 성공하면 valid_loss랑 train_loss도 넣어보는겨
-            wandb.log({"train_auc": model.history['train_auc'], "train_acc": model.history['train_acc'], "valid_auc": model.history['valid_auc'], "valid_acc": model.history['valid_acc'], "loss" : model.history['loss']})
+            for idx in range(len(model.history['train_auc'])):
+                wandb.log({
+                    'train_auc' : model.history['train_auc'][idx],
+                    'train_accuracy' : model.history['train_accuracy'][idx],
+                    'train_logloss' : model.history['train_logloss'][idx],
+                    'valid_full_auc' : model.history['valid_auc'][idx],
+                    'valid_full_accuracy' : model.history['valid_accuracy'][idx],
+                    'valid_full_logloss' : model.history['valid_logloss'][idx],
+                })
             
 
     else:
@@ -68,13 +80,20 @@ def tabnet_run(args, train_data, valid_data):
             eval_set=[(x_t, y_t), (x_v, y_v)],
             eval_name=['train', 'valid'],
             max_epochs=args.n_epochs, patience=args.patience,
-            eval_metric=['auc', 'accuracy'],
+            eval_metric=['auc', 'accuracy', 'logloss'],
             batch_size=args.tabnet_batchsize, virtual_batch_size=args.tabnet_virtual_batchsize,
         )
         model.save_model(f"{model_dir}/model")
         if args.use_wandb:
-            # 이거 성공하면 valid_loss랑 train_loss도 넣어보는겨
-            wandb.log({"train_auc": model.history['train_auc'], "train_acc": model.history['train_acc'], "valid_auc": model.history['valid_auc'], "valid_acc": model.history['valid_acc'], "loss" : model.history['loss']})
+            for idx in range(len(model.history['train_auc'])):
+                wandb.log({
+                    'train_auc' : model.history['train_auc'][idx],
+                    'train_accuracy' : model.history['train_accuracy'][idx],
+                    'train_logloss' : model.history['train_logloss'][idx],
+                    'valid_full_auc' : model.history['valid_auc'][idx],
+                    'valid_full_accuracy' : model.history['valid_accuracy'][idx],
+                    'valid_full_logloss' : model.history['valid_logloss'][idx],
+                })
 
             
 
@@ -233,8 +252,10 @@ def tabnet_inference(args, test_data):
     model_dir = os.path.join(args.model_dir, args.model_name)
     loaded_clf = TabNetClassifier()
     loaded_clf.load_model(f"{model_dir}/model.zip")
+    
     test_data.pop('answerCode')
-    loaded_preds = loaded_clf.predict_proba(test_data.values[:])
+    test_data.pop('userID')
+    loaded_preds = loaded_clf.predict_proba(np.array(test_data.values[:], dtype = np.float64))
     preds = loaded_preds[:, 1]
     
     prediction_name = datetime.now(timezone(timedelta(hours=9))).strftime('%m%d_%H%M')

@@ -20,7 +20,7 @@ def main(args):
     preprocess.load_valid_data(args.valid_file_name)
     train_data = preprocess.get_train_data()
     valid_data = preprocess.get_valid_data()
-
+    
     print()
     print(f"# of train_data : {len(train_data)}")
     print(f"# of valid_data : {len(valid_data)}")

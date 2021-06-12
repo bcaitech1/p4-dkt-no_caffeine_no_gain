@@ -15,6 +15,7 @@ def main(args):
     preprocess = Preprocess(args)
     preprocess.load_test_data(args.test_file_name)
     test_data = preprocess.get_test_data()
+    
     model_dir = os.path.join(args.model_dir, args.model_name)
     config = json.load(open(f"{model_dir}/exp_config.json", "r"))
     config['model_epoch'] = args.model_epoch
