@@ -21,14 +21,12 @@ def main(args):
     preprocess.load_valid_data(args.valid_file_name)
     train_data = preprocess.get_train_data()
     valid_data = preprocess.get_valid_data()
-<<<<<<< HEAD
     test_data = None
     if args.use_pseudo:
         preprocess.load_test_data(args.test_file_name)
         test_data = preprocess.get_test_data()
 
     trainer.run(args, train_data, valid_data, test_data)
-=======
     
     print()
     print(f"# of train_data : {len(train_data)}")
@@ -39,7 +37,6 @@ def main(args):
         trainer.tabnet_run(args, train_data, valid_data)
     else:
         trainer.run(args, train_data, valid_data)
->>>>>>> develop
     
 
 if __name__ == "__main__":
