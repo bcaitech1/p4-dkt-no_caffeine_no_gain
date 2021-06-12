@@ -2,6 +2,8 @@ import os
 import torch
 import numpy as np
 import json
+import copy
+import pandas as pd
 
 from .dataloader import get_loaders
 from .optimizer import get_optimizer
@@ -15,8 +17,15 @@ from datetime import timedelta, timezone, datetime
 
 import wandb
 
-def tabnet_run(args, train_data, valid_data):
+def tabnet_run(args, train_data, valid_data, test_data):
     print(args)
+    if args.use_pseudo:
+        pseudo_labels = pd.read_csv(args.pseudo_label_file) # '/opt/ml/p4-dkt-no_caffeine_no_gain/highest.csv'
+        pseudo_labels = pseudo_labels['prediction'].to_numpy()
+        pseudo_labels = np.where(pseudo_labels >= 0.5, 1, 0)
+
+        pseudo_train_data = update_train_data(pseudo_labels, train_data, test_data)
+        train_data = pseudo_train_data
     model_dir = os.path.join(args.model_dir, args.model_name)
     os.makedirs(model_dir, exist_ok=True)
     json.dump(
@@ -97,7 +106,14 @@ def tabnet_run(args, train_data, valid_data):
 
             
 
-def run(args, train_data, valid_data):
+def run(args, train_data, valid_data, test_data):
+    if args.use_pseudo:
+        pseudo_labels = pd.read_csv(args.pseudo_label_file) # '/opt/ml/p4-dkt-no_caffeine_no_gain/highest.csv'
+        pseudo_labels = pseudo_labels['prediction'].to_numpy()
+        pseudo_labels = np.where(pseudo_labels >= 0.5, 1, 0)
+
+        pseudo_train_data = update_train_data(pseudo_labels, train_data, test_data)
+        train_data = pseudo_train_data
     train_loader, valid_loader = get_loaders(args, train_data, valid_data)
     
     # only when using warmup scheduler
@@ -427,3 +443,25 @@ def load_model(args):
     
     print("Loading Model from:", model_path, "...Finished.")
     return model
+
+
+def get_target(datas):
+    targets = []
+    for data in datas:
+        targets.append(data[-1][-1])
+
+    return np.array(targets)
+
+
+def update_train_data(pseudo_labels, train_data, test_data):
+    # pseudo 라벨이 담길 test 데이터 복사본
+    pseudo_test_data = copy.deepcopy(test_data)
+    
+    # pseudo label 테스트 데이터 update
+    for test_data, pseudo_label in zip(pseudo_test_data, pseudo_labels):
+        test_data[-1][-1] = pseudo_label
+
+    # train data 업데이트
+    pseudo_train_data = np.concatenate((train_data, pseudo_test_data))
+
+    return pseudo_train_data
