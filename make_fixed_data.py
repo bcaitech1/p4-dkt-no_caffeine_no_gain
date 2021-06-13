@@ -213,20 +213,6 @@ def caffeine_feature(df):
 
     df['mean_time'] = df.groupby(['userID'])['time'].rolling(3).mean().values
 
-    # 평균 (mean) / 표준 편차 (std)
-    agg_df = df.groupby('userID').agg(['mean', 'std'])
-
-    # mapping을 위해 pandas DataFrame을 dictionary형태로 변환
-    agg_dict = agg_df.to_dict()
-
-    # 구한 통계량을 각 사용자에게 mapping
-    for k, v in agg_dict.items():
-        # feature 이름
-        feature_name = "_".join(k)
-        
-        # mapping이후 새로운 feature 추가
-        df[feature_name] = df['userID'].map(v)
-
     # 중간값 (median)
     agg_df = df.groupby('userID')['time'].agg(['median'])
 
