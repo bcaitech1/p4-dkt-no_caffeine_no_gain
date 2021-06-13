@@ -13,9 +13,9 @@ def parse_args(mode='train'):
     parser.add_argument('--data_dir', default='/opt/ml/input/data/train_dataset', type=str, help='data directory')
     parser.add_argument('--asset_dir', default='asset/', type=str, help='data directory')
     
-    parser.add_argument('--train_file_name', default='fixed_train.csv', type=str, help='train file name')
-    parser.add_argument('--valid_file_name', default='fixed_valid.csv', type=str, help='valid file name')
-    parser.add_argument('--test_file_name', default='fixed_test.csv', type=str, help='test file name')
+    parser.add_argument('--train_file_name', default='add_FE_fixed_train.csv', type=str, help='train file name')
+    parser.add_argument('--valid_file_name', default='add_FE_fixed_valid.csv', type=str, help='valid file name')
+    parser.add_argument('--test_file_name', default='add_FE_fixed_test.csv', type=str, help='test file name')
     
     parser.add_argument('--model_dir', default='models/', type=str, help='model directory')
 
