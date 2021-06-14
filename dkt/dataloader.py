@@ -86,13 +86,13 @@ class Preprocess:
         np.save(le_path, encoder.classes_)
 
 
-    def __preprocessing(self, train_df, valid_df=None, is_train=True):
+    def __preprocessing(self, main_df, sub_df=None, is_train=True):
         cate_cols = self.args.USE_COLUMN
 
         if not os.path.exists(self.args.asset_dir):
             os.makedirs(self.args.asset_dir)
             
-        all_df = pd.concat([train_df, valid_df])
+        all_df = pd.concat([main_df, sub_df])
         for col in cate_cols:            
             le = LabelEncoder()
             if is_train:
@@ -101,23 +101,23 @@ class Preprocess:
                 le.fit(a)
                 self.__save_labels(le, col)
             else:
-                label_path = os.path.join(self.args.asset_dir,col+'_classes.npy')
+                label_path = os.path.join(self.args.asset_dir, col + '_classes.npy')
                 le.classes_ = np.load(label_path)
-                train_df[col] = train_df[col].apply(lambda x: x if x in le.classes_ else 'unknown')
+                main_df[col] = main_df[col].apply(lambda x: x if x in le.classes_ else 'unknown')
 
             #모든 컬럼이 범주형이라고 가정
-            train_df[col]= train_df[col].astype(str)
-            test = le.transform(train_df[col])
-            train_df[col] = test
+            main_df[col]= main_df[col].astype(str)
+            trans = le.transform(main_df[col])
+            main_df[col] = trans
             
 
         def convert_time(s):
             timestamp = time.mktime(datetime.strptime(s, '%Y-%m-%d %H:%M:%S').timetuple())
             return int(timestamp) 
 
-        train_df['Timestamp'] = train_df['Timestamp'].apply(convert_time)
+        main_df['Timestamp'] = main_df['Timestamp'].apply(convert_time)
         
-        return train_df
+        return main_df
 
     def __feature_engineering(self, df):
 
@@ -164,27 +164,27 @@ class Preprocess:
     def df_apply_function(self, r):
         return tuple([r[x].values for x in self.args.USE_COLUMN] + [r[x].values for x in self.args.ANSWER_COLUMN])
 
-    def load_data_from_file(self, train_file_name, valid_file_name=None, is_train=True):
-        csv_file_path = os.path.join(self.args.data_dir, train_file_name)
-        train_df = pd.read_csv(csv_file_path)#, nrows=100000)
+    def load_data_from_file(self, main_file_name, sub_file_name=None, is_train=True):
+        csv_file_path = os.path.join(self.args.data_dir, main_file_name)
+        main_df = pd.read_csv(csv_file_path)#, nrows=100000)
         
         # args.use_test_to_train이 True일때 test셋도 학습에 사용
         if self.args.use_test_to_train:
             csv_file_path = os.path.join(self.args.data_dir, self.args.test_file_name)
             test_df = pd.read_csv(csv_file)
             test_df = test_df[test_df.answerCode != -1].copy()
-            train_df += test_df
+            main_df += test_df
             print("test셋 학습에 추가!")
             
-        train_df = self.__feature_engineering(train_df)
-        valid_df = None
+        main_df = self.__feature_engineering(main_df)
+        sub_df = None
         if is_train:
-            csv_file_path = os.path.join(self.args.data_dir, valid_file_name)
-            valid_df = pd.read_csv(csv_file_path)
-            valid_df = self.__feature_engineering(valid_df)
+            csv_file_path = os.path.join(self.args.data_dir, sub_file_name)
+            sub_df = pd.read_csv(csv_file_path)
+            sub_df = self.__feature_engineering(sub_df)
             
         if self.args.model != 'tabnet':
-            train_df = self.__preprocessing(train_df, valid_df, is_train)
+            main_df = self.__preprocessing(main_df, sub_df, is_train)
 
             # 추후 feature를 embedding할 시에 embedding_layer의 input 크기를 결정할때 사용
             self.args.n_embedding_layers = []       # 나중에 사용할 떄 embedding key들을 저장
@@ -192,13 +192,13 @@ class Preprocess:
                 self.args.n_embedding_layers.append(len(np.load(os.path.join(self.args.asset_dir, val+'_classes.npy'))))
 
 
-        train_df = train_df.sort_values(by=['userID','Timestamp'], axis=0)
+        main_df = main_df.sort_values(by=['userID','Timestamp'], axis=0)
         columns = self.args.USERID_COLUMN+self.args.USE_COLUMN+self.args.ANSWER_COLUMN
-        group = train_df[columns].groupby('userID').apply(
+        group = main_df[columns].groupby('userID').apply(
                 self.df_apply_function
             )
         if self.args.model =='tabnet':
-            g = train_df[self.args.USERID_COLUMN + self.args.USE_COLUMN+self.args.ANSWER_COLUMN]
+            g = main_df[self.args.USERID_COLUMN + self.args.USE_COLUMN+self.args.ANSWER_COLUMN]
             return g
         return group.values        
 
