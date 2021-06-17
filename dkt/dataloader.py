@@ -86,13 +86,13 @@ class Preprocess:
         np.save(le_path, encoder.classes_)
 
 
-    def __preprocessing(self, train_df, valid_df=None, is_train=True):
+    def __preprocessing(self, main_df, sub_df=None, is_train=True):
         cate_cols = self.args.USE_COLUMN
 
         if not os.path.exists(self.args.asset_dir):
             os.makedirs(self.args.asset_dir)
             
-        all_df = pd.concat([train_df, valid_df])
+        all_df = pd.concat([main_df, sub_df])
         for col in cate_cols:            
             le = LabelEncoder()
             if is_train:
@@ -101,58 +101,30 @@ class Preprocess:
                 le.fit(a)
                 self.__save_labels(le, col)
             else:
-                label_path = os.path.join(self.args.asset_dir,col+'_classes.npy')
+                label_path = os.path.join(self.args.asset_dir, col + '_classes.npy')
                 le.classes_ = np.load(label_path)
-                train_df[col] = train_df[col].apply(lambda x: x if x in le.classes_ else 'unknown')
+                main_df[col] = main_df[col].apply(lambda x: x if x in le.classes_ else 'unknown')
 
             #모든 컬럼이 범주형이라고 가정
-            train_df[col]= train_df[col].astype(str)
-            test = le.transform(train_df[col])
-            train_df[col] = test
+            main_df[col]= main_df[col].astype(str)
+            trans = le.transform(main_df[col])
+            main_df[col] = trans
             
 
         def convert_time(s):
             timestamp = time.mktime(datetime.strptime(s, '%Y-%m-%d %H:%M:%S').timetuple())
             return int(timestamp) 
 
-        train_df['Timestamp'] = train_df['Timestamp'].apply(convert_time)
+        main_df['Timestamp'] = main_df['Timestamp'].apply(convert_time)
         
-        return train_df
+        return main_df
 
     def __feature_engineering(self, df):
 
         self.args.USERID_COLUMN = ['userID']
         self.args.ANSWER_COLUMN = ['answerCode']
-        self.args.USE_COLUMN = ['testId', 'assessmentItemID','KnowledgeTag', 'elapsed', 'time_bin', 'classification', 'paperNum', 'problemNum']
-        self.args.EXCLUDE_COLUMN = ['Timestamp', 'hours']
-        
-        # use 3 features instead testId, assessmentItemID
-        df['classification'] = df['testId'].str[2:3]
-        df['paperNum'] = df['testId'].str[-3:]
-        df['problemNum'] = df['assessmentItemID'].str[-3:]
-
-        df = df.astype({'Timestamp': 'datetime64[ns]'})
-        def hours(timestamp):
-            return int(str(timestamp).split()[1].split(":")[0])
-        
-        df["hours"] = df.Timestamp.apply(hours)
-        
-        def time_bin(hours):
-            if 0 <= hours <= 5:
-                # Night
-                return 0
-            elif 6 <= hours <= 11:
-                # Morning
-                return 1
-            elif 12 <= hours <= 17:
-                # Daytime
-                return 2
-            else:
-                # Evening
-                return 3
-        
-        df["time_bin"] = df.hours.apply(time_bin)
-        df = df.astype({'Timestamp': 'str'})
+        self.args.USE_COLUMN = ['assessmentItemID', 'testId', 'Timestamp', 'KnowledgeTag', 'elapsed', 'item', 'item_order', 'user_total_correct_cnt', 'user_total_ans_cnt', 'user_total_acc', 'test_size', 'retest', 'user_test_ans_cnt', 'user_test_correct_cnt', 'user_acc', 'test_mean', 'test_sum', 'ItemID_mean', 'ItemID_sum', 'tag_mean', 'tag_sum', 'classification', 'paperNum', 'problemNum', 'hours', 'time_bin', 'tag_acc', 'assessment_acc', 'test_acc', 'time', 'correct_shift_-2', 'correct_shift_-1', 'correct_shift_1', 'correct_shift_2', 'total_used_time', 'shift', 'past_correct', 'future_correct', 'past_content_correct', 'past_count', 'average_correct', 'past_content_count', 'average_content_correct', 'mean_time', 'assessmentItemID_mean', 'assessmentItemID_std', 'answerCode_mean', 'answerCode_std', 'KnowledgeTag_mean', 'KnowledgeTag_std', 'elapsed_mean', 'elapsed_std', 'item_mean', 'item_std', 'item_order_mean', 'item_order_std', 'user_total_correct_cnt_mean', 'user_total_correct_cnt_std', 'user_total_ans_cnt_mean', 'user_total_ans_cnt_std', 'user_total_acc_mean', 'user_total_acc_std', 'test_size_mean', 'test_size_std', 'retest_mean', 'retest_std', 'user_test_ans_cnt_mean', 'user_test_ans_cnt_std', 'user_test_correct_cnt_mean', 'user_test_correct_cnt_std', 'user_acc_mean', 'user_acc_std', 'test_mean_mean', 'test_mean_std', 'test_sum_mean', 'test_sum_std', 'ItemID_mean_mean', 'ItemID_mean_std', 'ItemID_sum_mean', 'ItemID_sum_std', 'tag_mean_mean', 'tag_mean_std', 'tag_sum_mean', 'tag_sum_std', 'classification_mean', 'classification_std', 'paperNum_mean', 'paperNum_std', 'problemNum_mean', 'problemNum_std', 'hours_mean', 'hours_std', 'time_bin_mean', 'time_bin_std', 'tag_acc_mean', 'tag_acc_std', 'assessment_acc_mean', 'assessment_acc_std', 'test_acc_mean', 'test_acc_std', 'time_mean', 'time_std', 'correct_shift_-2_mean', 'correct_shift_-2_std', 'correct_shift_-1_mean', 'correct_shift_-1_std', 'correct_shift_1_mean', 'correct_shift_1_std', 'correct_shift_2_mean', 'correct_shift_2_std', 'total_used_time_mean', 'total_used_time_std', 'shift_mean', 'shift_std', 'past_correct_mean', 'past_correct_std', 'future_correct_mean', 'future_correct_std', 'past_content_correct_mean', 'past_content_correct_std', 'past_count_mean', 'past_count_std', 'average_correct_mean', 'average_correct_std', 'past_content_count_mean', 'past_content_count_std', 'average_content_correct_mean', 'average_content_correct_std', 'mean_time_mean', 'mean_time_std', 'time_median', 'hour', 'correct_per_hour', 'hour_mode', 'is_night', 'normalized_time', 'relative_time', 'time_cut', 'time_qcut', 'same_tag', 'cont_tag', ]
+        self.args.EXCLUDE_COLUMN = []
 
         assert df.head().shape[1] == len(self.args.USERID_COLUMN) + len(self.args.ANSWER_COLUMN) + len(
             self.args.USE_COLUMN) + len(self.args.EXCLUDE_COLUMN)
@@ -162,31 +134,43 @@ class Preprocess:
     def df_apply_function(self, r):
         return tuple([r[x].values for x in self.args.USE_COLUMN] + [r[x].values for x in self.args.ANSWER_COLUMN])
 
-    def load_data_from_file(self, train_file_name, valid_file_name=None, is_train=True):
-        csv_file_path = os.path.join(self.args.data_dir, train_file_name)
-        train_df = pd.read_csv(csv_file_path)#, nrows=100000)
-        train_df = self.__feature_engineering(train_df)
-        valid_df = None
-        if is_train:
-            csv_file_path = os.path.join(self.args.data_dir, valid_file_name)
-            valid_df = pd.read_csv(csv_file_path)
-            valid_df = self.__feature_engineering(valid_df)
-        train_df = self.__preprocessing(train_df, valid_df, is_train)
+    def load_data_from_file(self, main_file_name, sub_file_name=None, is_train=True):
+        csv_file_path = os.path.join(self.args.data_dir, main_file_name)
+        main_df = pd.read_csv(csv_file_path)#, nrows=100000)
         
-        # 추후 feature를 embedding할 시에 embedding_layer의 input 크기를 결정할때 사용
-        self.args.n_embedding_layers = []       # 나중에 사용할 떄 embedding key들을 저장
-        for val in self.args.USE_COLUMN:
-            self.args.n_embedding_layers.append(len(np.load(os.path.join(self.args.asset_dir, val+'_classes.npy'))))
+        # args.use_test_to_train이 True일때 test셋도 학습에 사용
+        if self.args.use_test_to_train:
+            csv_file_path = os.path.join(self.args.data_dir, self.args.test_file_name)
+            test_df = pd.read_csv(csv_file)
+            test_df = test_df[test_df.answerCode != -1].copy()
+            main_df += test_df
+            print("test셋 학습에 추가!")
+            
+        main_df = self.__feature_engineering(main_df)
+        sub_df = None
+        if is_train:
+            csv_file_path = os.path.join(self.args.data_dir, sub_file_name)
+            sub_df = pd.read_csv(csv_file_path)
+            sub_df = self.__feature_engineering(sub_df)
+            
+        if self.args.model != 'tabnet':
+            main_df = self.__preprocessing(main_df, sub_df, is_train)
+
+            # 추후 feature를 embedding할 시에 embedding_layer의 input 크기를 결정할때 사용
+            self.args.n_embedding_layers = []       # 나중에 사용할 떄 embedding key들을 저장
+            for val in self.args.USE_COLUMN:
+                self.args.n_embedding_layers.append(len(np.load(os.path.join(self.args.asset_dir, val+'_classes.npy'))))
 
 
-        train_df = train_df.sort_values(by=['userID','Timestamp'], axis=0)
+        main_df = main_df.sort_values(by=['userID','Timestamp'], axis=0)
         columns = self.args.USERID_COLUMN+self.args.USE_COLUMN+self.args.ANSWER_COLUMN
-        group = train_df[columns].groupby('userID').apply(
+        group = main_df[columns].groupby('userID').apply(
                 self.df_apply_function
             )
-    
-        return group.values
-
+        if self.args.model =='tabnet':
+            g = main_df[self.args.USERID_COLUMN + self.args.USE_COLUMN+self.args.ANSWER_COLUMN]
+            return g
+        return group.values        
 
     def load_train_data(self, train_file, valid_file):   
         self.train_data = self.load_data_from_file(train_file, valid_file)
