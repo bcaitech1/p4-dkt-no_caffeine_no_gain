@@ -1,16 +1,7 @@
-# 📝 No Caffeine No Gain
-<br>
-
-**프로젝트 기간 : 2021.05.31 ~ 2021.06.15**
-<br>
-<br>
-**프로젝트 내용 : Deep Knowledge Tracing**
-
-<br>
-
 ## [목차]
 
-- [\[Deep Knowledge Tracing 소개\]](#deep-knowledge-tracing-소개)
+* [\[Dialogue State Tracking 소개\]](#dialogue-state-tracking-소개)
+- [\[Deep Knowledge Tracing 소개]\](#deep-knowledge-tracing-소개)
 - [[Installation]](#installation)
   * [Dependencies](#dependencies)
 - [[Usage]](#usage)
@@ -30,10 +21,12 @@
 - [[Feature]](#feature)
 - [[Contributors]](#contributors)
 - [[Collaborative Works]](#collaborative-works)
-  * [📝 Notion](#-notion)
+  * [📝 Notion](#notion)
 - [[Reference]](#reference)
   * [Papers](#papers)
   * [Dataset](#dataset-1)
+
+<small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
 
 <br>
 <br>
@@ -42,13 +35,19 @@
 
 **DKT**는 **Deep Knowledge Tracing**의 약자로 우리의 "지식 상태"를 추적하는 딥러닝 방법론입니다.
 
-![https://s3-us-west-2.amazonaws.com/secure.notion-static.com/d7568542-7435-4668-8267-495eaeb5d6ba/Untitled.png](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/d7568542-7435-4668-8267-495eaeb5d6ba/Untitled.png)
+<div align='center'>
+    <img src='https://user-images.githubusercontent.com/37643891/122540925-10143980-d064-11eb-8afc-ccdb1e76114c.png' height='250px '/>
+</div>
+<br/>
+
 
 대회에서는 학생 개개인의 이해도를 가리키는 지식 상태를 예측하는 일보다는, 주어진 문제를 맞출지 틀릴지 예측하는 것에 집중합니다.
 
-![https://s3-us-west-2.amazonaws.com/secure.notion-static.com/447fe89e-5e3d-4024-ac80-7a125870a8f0/Untitled.png](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/447fe89e-5e3d-4024-ac80-7a125870a8f0/Untitled.png)
+<div align='center'>
+    <img src='https://user-images.githubusercontent.com/37643891/122541124-42be3200-d064-11eb-8e60-0f7d82a15df9.png' height='250px '/>
+</div>
+<br/>
 
-<br>
 <br>
 
 ## [Installation]
@@ -62,6 +61,7 @@
 - tqdm
 - wandb
 - easydict
+- pytorch-tabnet
 
 ```bash
 pip install -r requirements.txt
@@ -219,7 +219,10 @@ code
 
 ### LSTM
 
-![https://s3-us-west-2.amazonaws.com/secure.notion-static.com/2fd4ada4-6d16-4bb5-bf41-2e34795347b4/Untitled.png](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/2fd4ada4-6d16-4bb5-bf41-2e34795347b4/Untitled.png)
+<div align='center'>
+    <img src='https://user-images.githubusercontent.com/37643891/122541256-66817800-d064-11eb-92ea-7fc9ae8b0cce.png' height='250px '/>
+</div>
+<br/>
 
 - sequence data를 다루기 위한 LSTM 모델입니다.
 - **구현**
@@ -242,7 +245,11 @@ code
 
 ### LSTMATTN
 
-![https://s3-us-west-2.amazonaws.com/secure.notion-static.com/5c335562-4ff2-46b4-a3a5-728021a548e7/Untitled.png](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/5c335562-4ff2-46b4-a3a5-728021a548e7/Untitled.png)
+<div align='center'>
+    <img src='https://user-images.githubusercontent.com/37643891/122541497-a6485f80-d064-11eb-8c97-61b7b9d25954.png' height='250px '/>
+</div>
+<br/>
+
 
 - LSTM 모델에 Self-Attention을 추가한 모델입니다.
 - **구현**
@@ -265,7 +272,11 @@ code
 
 ### BERT
 
-![https://s3-us-west-2.amazonaws.com/secure.notion-static.com/eace3214-70f5-4bc3-9267-f5940d59551c/Untitled.png](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/eace3214-70f5-4bc3-9267-f5940d59551c/Untitled.png)
+<div align='center'>
+    <img src='https://user-images.githubusercontent.com/37643891/122541560-b6f8d580-d064-11eb-94ac-73c0acafc796.png' height='250px '/>
+</div>
+<br/>
+
 
 - `Huggingface` 에서 BERT 구조를 가져와서 사용합니다. 다만, pre-trained 모델이 아니기 때문에 Transformer-encoder 와 같습니다.
 - 현재 모델에서는 bert_config 의 is_decoder 를 True 로 주어 Transformer-decoder 로 사용하고 있습니다.
@@ -291,7 +302,11 @@ code
 
 ### LGBM
 
-![https://s3-us-west-2.amazonaws.com/secure.notion-static.com/cbf5c2b5-1aff-4428-983b-413da3a5ebbe/Untitled.png](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/cbf5c2b5-1aff-4428-983b-413da3a5ebbe/Untitled.png)
+<div align='center'>
+    <img src='https://user-images.githubusercontent.com/37643891/122541790-03dcac00-d065-11eb-9464-3f4c890bccda.png' height='250px '/>
+</div>
+<br/>
+
 
 - tabular data에서 좋은 성능을 보이는 Machine Learning 모델입니다.
 
@@ -300,7 +315,12 @@ code
 
 ### SAINT
 
-![https://s3-us-west-2.amazonaws.com/secure.notion-static.com/0682e128-c43a-4940-8481-ffc3faa43e71/Untitled.png](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/0682e128-c43a-4940-8481-ffc3faa43e71/Untitled.png)
+<div align='center'>
+    <img src='https://user-images.githubusercontent.com/37643891/122541828-0d661400-d065-11eb-9028-d7b1a0d6adce.png' height='250px '/>
+</div>
+<br/>
+
+
 
 - Kaggle Riiid AIEd Challenge 2020의 [Host가 제시한 solution](https://www.kaggle.com/c/riiid-test-answer-prediction/discussion/193250) 입니다.
 - Transformer와 비슷한 구조의 모델로 Encoder와 Decoder를 가지고 있습니다.
@@ -326,7 +346,11 @@ code
 
 ### LastQuery
 
-![https://s3-us-west-2.amazonaws.com/secure.notion-static.com/d4beb986-59f0-4b68-8156-5dd6ee283256/Untitled.png](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/d4beb986-59f0-4b68-8156-5dd6ee283256/Untitled.png)
+<div align='center'>
+    <img src='https://user-images.githubusercontent.com/37643891/122541905-1eaf2080-d065-11eb-995e-3e7fa03907d3.png' height='250px '/>
+</div>
+<br/>
+
 
 - Kaggle Riiid AIEd Challenge 2020의 [1st place solution](https://www.kaggle.com/c/riiid-test-answer-prediction/discussion/218318)입니다.
 - transformer encoder의 입력으로 sequence의 마지막 query만 사용하여 시간복잡도를 줄이고, encoder의 output을 LSTM에 넣어 학습하는 방식의 모델입니다.
@@ -353,7 +377,11 @@ code
 
 ### TABNET
 
-![https://s3-us-west-2.amazonaws.com/secure.notion-static.com/a4d49173-70b9-43b1-91f3-3051250e5e4d/Untitled.png](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/a4d49173-70b9-43b1-91f3-3051250e5e4d/Untitled.png)
+<div align='center'>
+    <img src='https://user-images.githubusercontent.com/37643891/122541964-2b337900-d065-11eb-9cad-f8d9c86c5f4e.png' height='250px '/>
+</div>
+<br/>
+
 
 - tabular data에서 ML모델보다 더 우수한 성능을 보이는 Deep-learning model입니다.
 - data에서 Sparse instance-wise feature selection을 사용하여 자체적으로 중요한 feature 선별해낸 후 학습하는 방식을 사용하며, feature 선별시 non-linear한 processing을 사용하여 learning capacity를 향상시킵니다.
@@ -400,13 +428,20 @@ code
 
 데이터는 아래와 같은 형태이며, 한 행은 한 사용자가 한 문항을 풀었을 때의 정보와 그 문항을 맞췄는지에 대한 정보가 담겨져 있습니다. 데이터는 모두 Timestamp 기준으로 정렬되어 있습니다.
 
-![https://s3-us-west-2.amazonaws.com/secure.notion-static.com/0b52081c-e41b-41eb-9417-dc319de4e93b/Untitled.png](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/0b52081c-e41b-41eb-9417-dc319de4e93b/Untitled.png)
+<div align='center'>
+    <img src='https://user-images.githubusercontent.com/37643891/122542042-3d151c00-d065-11eb-8278-be19e177037e.png' height='250px '/>
+</div>
+<br/>
+
 
 - `userID` 사용자의 고유번호입니다. 총 7,442명의 고유 사용자가 있으며, train/test셋은 이 `userID`를 기준으로 90/10의 비율로 나누어졌습니다.
 - `assessmentItemID` 문항의 고유번호입니다. 총 9,454개의 고유 문항이 있습니다.
 - `testId` 시험지의 고유번호입니다. 문항과 시험지의 관계는 아래 그림을 참고하여 이해하시면 됩니다. 총 1,537개의 고유한 시험지가 있습니다.
 
-![https://s3-us-west-2.amazonaws.com/secure.notion-static.com/dc01d187-575e-4c0e-bddb-5eec928e86db/Untitled.png](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/dc01d187-575e-4c0e-bddb-5eec928e86db/Untitled.png)
+<div align='center'>
+    <img src='https://user-images.githubusercontent.com/37643891/122542102-49997480-d065-11eb-9957-c84bc1ab77d5.png' height='250px '/>
+</div>
+<br/>
 
 - `answerCode` 사용자가 해당 문항을 맞췄는지 여부에 대한 이진 데이터이며 0은 사용자가 해당 문항을 틀린 것, 1은 사용자가 해당 문항을 맞춘 것입니다.
 - `Timestamp` 사용자가 해당문항을 풀기 시작한 시점의 데이터입니다.
@@ -467,45 +502,55 @@ etc...
 
 **Gitflow 브랜치 전략**
 
-`→ 92개의 Commits, 26개의 Pull Requests`
+→ 92개의 Commits, 26개의 Pull Requests
 
-![https://s3-us-west-2.amazonaws.com/secure.notion-static.com/51d09511-77c0-4efe-a65b-c706cae75ecd/pr.gif](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/51d09511-77c0-4efe-a65b-c706cae75ecd/pr.gif)
+<div align='center'>
+    <img src='https://user-images.githubusercontent.com/37643891/122542173-59b15400-d065-11eb-9c49-56c091e4fc9f.gif' height='250px '/>
+</div>
+<br/>
 
-<br>
 
 **Github issues & projects 로 일정 관리**
 
-`→ 28개의 Issues`
+→ 28개의 Issues
 
-![https://s3-us-west-2.amazonaws.com/secure.notion-static.com/38005daf-d372-403f-b7b7-5d162d11bc57/ezgif.com-gif-maker.gif](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/38005daf-d372-403f-b7b7-5d162d11bc57/ezgif.com-gif-maker.gif)
+<div align='center'>
+    <img src='https://user-images.githubusercontent.com/37643891/122542239-6e8de780-d065-11eb-9f6f-821372f4bbbf.gif' height='250px '/>
+</div>
+<br/>
 
-`→ Modeling Project 에서 관리`
 
-![https://s3-us-west-2.amazonaws.com/secure.notion-static.com/f937a7c8-19d5-4e52-a49a-68d3843be5b6/project.gif](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/f937a7c8-19d5-4e52-a49a-68d3843be5b6/project.gif)
+→ Modeling Project 에서 관리
 
-<br>
+<div align='center'>
+    <img src='https://user-images.githubusercontent.com/37643891/122542265-751c5f00-d065-11eb-8465-97d2a6fbfebf.gif' height='250px '/>
+</div>
+<br/>
+
 
 **Notion 실험노트로 실험 공유**
 
-`→ 39개의 실험노트`
+→ 39개의 실험노트
 
-![https://s3-us-west-2.amazonaws.com/secure.notion-static.com/0280f6aa-f632-4155-b7b8-c3d5b7b02a8b/.gif](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/0280f6aa-f632-4155-b7b8-c3d5b7b02a8b/.gif)
+<div align='center'>
+    <img src='https://user-images.githubusercontent.com/37643891/122542297-81082100-d065-11eb-96de-713440c9544b.gif' height='250px '/>
+</div>
+<br/>
 
-<br>
 
-**Notion 제출기록으로 제출 내역 공유**
+Notion 제출기록으로 제출 내역 공유
+→ 155개의 제출기록
 
-`→ 155개의 제출기록`
+<div align='center'>
+    <img src='https://user-images.githubusercontent.com/37643891/122542323-86fe0200-d065-11eb-8949-8aa146157d73.gif' height='250px '/>
+</div>
 
-![https://s3-us-west-2.amazonaws.com/secure.notion-static.com/fc10b2d9-5768-4fab-98ac-a76a131fd492/.gif](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/fc10b2d9-5768-4fab-98ac-a76a131fd492/.gif)
-
-<br>
 
 ### 📝 Notion
 
-피어들의 `Ground Rule`, `실험노트`, `피어세션` 등 한달 간의 행보를 확인하시려면 다음 링크를 클릭하세요.
 
-* LINK : [DKT-10조-No_Caffeine_No_Gain](https://www.notion.so/DKT-10-No_Caffeine_No_Gain-dcc1e3823ec849578ab5ae0bcf117145)
+[DKT-10조-No_Caffeine_No_Gain](https://www.notion.so/DKT-10-No_Caffeine_No_Gain-dcc1e3823ec849578ab5ae0bcf117145)
+
 
 <br>
 <br>
@@ -522,4 +567,6 @@ etc...
 
 ### Dataset
 - i-Scream edu Dataset
-![https://s3-us-west-2.amazonaws.com/secure.notion-static.com/59ea867b-83f2-4bba-ae0d-e40cadd59c18/Untitled.png](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/59ea867b-83f2-4bba-ae0d-e40cadd59c18/Untitled.png)
+<div align='center'>
+    <img src='https://user-images.githubusercontent.com/37643891/122542423-9ed58600-d065-11eb-9c4e-8c8efa83de80.png' height='250px '/>
+</div>
