@@ -101,7 +101,7 @@ class Preprocess:
                 le.fit(a)
                 self.__save_labels(le, col)
             else:
-                label_path = os.path.join(self.args.asset_dir, col + '_classes.npy')
+                label_path = os.path.join(self.args.asset_dir,col+'_classes.npy')
                 le.classes_ = np.load(label_path)
                 main_df[col] = main_df[col].apply(lambda x: x if x in le.classes_ else 'unknown')
 
@@ -141,7 +141,7 @@ class Preprocess:
         # args.use_test_to_train이 True일때 test셋도 학습에 사용
         if self.args.use_test_to_train:
             csv_file_path = os.path.join(self.args.data_dir, self.args.test_file_name)
-            test_df = pd.read_csv(csv_file)
+            test_df = pd.read_csv(csv_file_path)
             test_df = test_df[test_df.answerCode != -1].copy()
             main_df += test_df
             print("test셋 학습에 추가!")
@@ -168,7 +168,7 @@ class Preprocess:
                 self.df_apply_function
             )
         if self.args.model =='tabnet':
-            g = main_df[self.args.USERID_COLUMN + self.args.USE_COLUMN+self.args.ANSWER_COLUMN]
+            g = main_df[columns]
             return g
         return group.values        
 
@@ -178,19 +178,7 @@ class Preprocess:
         print()
             
         if self.args.window:
-            augmented_train_numpy_name = train_file.split('.')[0] + '_msl' + str(self.args.max_seq_len) + '_st' + str(self.args.stride) + '.npy'
-            augmented_train_numpy_path = os.path.join(self.args.data_dir, augmented_train_numpy_name)
-                
-            if os.path.exists(augmented_train_numpy_path):
-                print(f"{augmented_train_numpy_name} exists!")
-                self.train_data = np.load(augmented_train_numpy_path, allow_pickle=True)
-                print(f"{augmented_train_numpy_name} is loaded!")
-            else:
-                print(f"{augmented_train_numpy_name} doesn't exist!")
-                self.train_data = self.sliding_window()
-                np.save(augmented_train_numpy_path, self.train_data)
-                print(f"{augmented_train_numpy_name} is saved!")
-            print()
+            self.train_data = self.sliding_window()
             
                 
     def load_valid_data(self, valid_file):

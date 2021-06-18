@@ -114,6 +114,9 @@ def run(args, train_data, valid_data, test_data):
 
         pseudo_train_data = update_train_data(pseudo_labels, train_data, test_data)
         train_data = pseudo_train_data
+    print(f"# of train data : {len(train_data)}")
+    print(f"# of valid data : {len(valid_data)}")
+    print()
     train_loader, valid_loader = get_loaders(args, train_data, valid_data)
     
     # only when using warmup scheduler
@@ -133,6 +136,13 @@ def run(args, train_data, valid_data, test_data):
     print(f"\n{model_dir}/exp_config.json is saved!\n")
             
     model = get_model(args)
+    # print(f"model : {model}")
+    if args.use_finetune:
+        load_state = torch.load(args.trained_model)
+        # print(f"load_state : {load_state}")
+        model.load_state_dict(load_state['state_dict'], strict=True)
+        print(f"{args.trained_model} is loaded!")
+
     optimizer = get_optimizer(model, args)
     scheduler = get_scheduler(optimizer, args)
 
@@ -321,9 +331,7 @@ def inference(args, test_data):
         w.write("id,prediction\n")
         for id, p in enumerate(total_preds):
             w.write('{},{}\n'.format(id,p))
-            
-
-
+         
 def get_tabnet_model(args):
     if args.tabnet_pretrain:
         pretrain_model,model = TabNet(args)
@@ -458,10 +466,12 @@ def update_train_data(pseudo_labels, train_data, test_data):
     pseudo_test_data = copy.deepcopy(test_data)
     
     # pseudo label 테스트 데이터 update
-    for test_data, pseudo_label in zip(pseudo_test_data, pseudo_labels):
-        test_data[-1][-1] = pseudo_label
+    for p_test_data, pseudo_label in zip(pseudo_test_data, pseudo_labels):
+        p_test_data[-1][-1] = pseudo_label
 
     # train data 업데이트
-    pseudo_train_data = np.concatenate((train_data, pseudo_test_data))
+    # pseudo_train_data = np.concatenate((train_data, pseudo_test_data))
+    pseudo_train_data = pseudo_test_data
+    print("pseudo_trian is ready!")
 
     return pseudo_train_data

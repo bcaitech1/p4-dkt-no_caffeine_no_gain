@@ -6,6 +6,8 @@ from dkt.trainer import update_train_data
 import torch
 from dkt.utils import setSeeds
 import wandb
+import json
+import argparse
 
 def main(args):
     if args.use_wandb:
@@ -16,12 +18,19 @@ def main(args):
     device = "cuda" if torch.cuda.is_available() else "cpu"
     args.device = device
 
+    if args.original_data:
+        args.train_file_name = "original_fixed_train.csv"
+        args.valid_file_name = "original_fixed_valid.csv"
+        args.test_file_name = "test_data_add_elapsed.csv"
+
     preprocess = Preprocess(args)
     preprocess.load_train_data(args.train_file_name,args.valid_file_name)
     preprocess.load_valid_data(args.valid_file_name)
     train_data = preprocess.get_train_data()
     valid_data = preprocess.get_valid_data()
     test_data = None
+
+
     if args.use_pseudo:
         preprocess.load_test_data(args.test_file_name)
         test_data = preprocess.get_test_data()
