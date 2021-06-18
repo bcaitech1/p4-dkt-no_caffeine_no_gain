@@ -5,3 +5,4 @@ tqdm
 wandb
 transformers
 easydict
+pytorch-tabnet

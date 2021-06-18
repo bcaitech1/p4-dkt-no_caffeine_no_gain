@@ -15,9 +15,6 @@ try:
 except:
     from transformers.models.bert.modeling_bert import BertConfig, BertEncoder, BertModel    
 
-
-
-
 class LSTM(nn.Module):
 
     def __init__(self, args):
@@ -35,11 +32,6 @@ class LSTM(nn.Module):
         self.embedding_features = nn.ModuleList([])
         for value in self.args.n_embedding_layers:
             self.embedding_features.append(nn.Embedding(value + 1, self.hidden_dim // self.args.dim_div))
-
-        #self.embedding_classification = nn.Embedding(self.args.n_class + 1, self.hidden_dim//3)
-        #self.embedding_paperNum = nn.Embedding(self.args.n_paper + 1, self.hidden_dim//3)
-        #self.embedding_problemNum = nn.Embedding(self.args.n_problem + 1, self.hidden_dim//3)
-        #self.embedding_tag = nn.Embedding(self.args.n_tag + 1, self.hidden_dim//3)
 
         # embedding combination projection
         # +1은 interaction
@@ -84,10 +76,6 @@ class LSTM(nn.Module):
         for _input, _embedding_feature in zip(input[:-4], self.embedding_features):
             value = _embedding_feature(_input)
             embed_features.append(value)
-        #embed_classification = self.embedding_classification(classification)
-        #embed_paperNum = self.embedding_paperNum(paperNum)
-        #embed_problemNum = self.embedding_problemNum(problemNum)
-        #embed_tag = self.embedding_tag(tag)
 
         embed_features = [embed_interaction] + embed_features
 
@@ -418,7 +406,6 @@ class LastQuery(nn.Module):
 
 
     def forward(self, input):
-#         test, question, tag, _, mask, interaction, index = input
         _, mask, interaction, index = input[-4:]
         batch_size = interaction.size(0)
         seq_len = interaction.size(1)

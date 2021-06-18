@@ -11,11 +11,6 @@ def main(args):
     device = "cuda" if torch.cuda.is_available() else "cpu"
     args.device = device
 
-    # args.train_file_name = "original_fixed_train.csv"
-    # args.valid_file_name = "original_fixed_valid.csv"
-    # args.test_file_name = "test_data_add_elapsed.csv"
-
-    
     preprocess = Preprocess(args)
     preprocess.load_test_data(args.test_file_name)
     test_data = preprocess.get_test_data()
