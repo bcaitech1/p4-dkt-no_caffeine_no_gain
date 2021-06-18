@@ -465,33 +465,47 @@ etc...
 
 ## [Collaborative Works]
 
-**Gitflow 브랜치 전략 **
-→ 92개의 Commits, 26개의 Pull Requests
+**Gitflow 브랜치 전략**
+
+`→ 92개의 Commits, 26개의 Pull Requests`
 
 ![https://s3-us-west-2.amazonaws.com/secure.notion-static.com/51d09511-77c0-4efe-a65b-c706cae75ecd/pr.gif](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/51d09511-77c0-4efe-a65b-c706cae75ecd/pr.gif)
 
-**Github issues & projects 로 일정 관리 **
-→ 28개의 Issues
+<br>
+
+**Github issues & projects 로 일정 관리**
+
+`→ 28개의 Issues`
 
 ![https://s3-us-west-2.amazonaws.com/secure.notion-static.com/38005daf-d372-403f-b7b7-5d162d11bc57/ezgif.com-gif-maker.gif](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/38005daf-d372-403f-b7b7-5d162d11bc57/ezgif.com-gif-maker.gif)
 
-→ Modeling Project 에서 관리
+`→ Modeling Project 에서 관리`
 
 ![https://s3-us-west-2.amazonaws.com/secure.notion-static.com/f937a7c8-19d5-4e52-a49a-68d3843be5b6/project.gif](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/f937a7c8-19d5-4e52-a49a-68d3843be5b6/project.gif)
 
-**Notion 실험노트로 실험 공유 **
-→ 39개의 실험노트
+<br>
+
+**Notion 실험노트로 실험 공유**
+
+`→ 39개의 실험노트`
 
 ![https://s3-us-west-2.amazonaws.com/secure.notion-static.com/0280f6aa-f632-4155-b7b8-c3d5b7b02a8b/.gif](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/0280f6aa-f632-4155-b7b8-c3d5b7b02a8b/.gif)
 
-Notion 제출기록으로 제출 내역 공유
-→ 155개의 제출기록
+<br>
+
+**Notion 제출기록으로 제출 내역 공유**
+
+`→ 155개의 제출기록`
 
 ![https://s3-us-west-2.amazonaws.com/secure.notion-static.com/fc10b2d9-5768-4fab-98ac-a76a131fd492/.gif](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/fc10b2d9-5768-4fab-98ac-a76a131fd492/.gif)
 
+<br>
+
 ### 📝 Notion
 
-[DKT-10조-No_Caffeine_No_Gain](https://www.notion.so/DKT-10-No_Caffeine_No_Gain-dcc1e3823ec849578ab5ae0bcf117145)
+피어들의 `Ground Rule`, `실험노트`, `피어세션` 등 한달 간의 행보를 확인하시려면 다음 링크를 클릭하세요.
+
+* LINK : [DKT-10조-No_Caffeine_No_Gain](https://www.notion.so/DKT-10-No_Caffeine_No_Gain-dcc1e3823ec849578ab5ae0bcf117145)
 
 <br>
 <br>
