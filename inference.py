@@ -11,7 +11,6 @@ def main(args):
     device = "cuda" if torch.cuda.is_available() else "cpu"
     args.device = device
 
-    
     preprocess = Preprocess(args)
     preprocess.load_test_data(args.test_file_name)
     test_data = preprocess.get_test_data()

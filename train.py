@@ -6,6 +6,8 @@ from dkt.trainer import update_train_data
 import torch
 from dkt.utils import setSeeds
 import wandb
+import json
+import argparse
 
 def main(args):
     if args.use_wandb:
@@ -22,6 +24,8 @@ def main(args):
     train_data = preprocess.get_train_data()
     valid_data = preprocess.get_valid_data()
     test_data = None
+
+
     if args.use_pseudo:
         preprocess.load_test_data(args.test_file_name)
         test_data = preprocess.get_test_data()
