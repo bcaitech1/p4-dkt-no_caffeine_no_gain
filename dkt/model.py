@@ -720,58 +720,6 @@ class TfixupBert(nn.Module):
         return preds
 
 
-class EncoderLayer(nn.Module):
-    def __init__(self, args):
-        super(EncoderLayer, self).__init__()
-        self.args = args
-        self.device = args.device
-
-        # Defining some parameters
-        self.hidden_dim = self.args.hidden_dim
-        self.n_layers = self.args.n_layers
-
-        self.query = nn.Linear(in_features=self.hidden_dim, out_features=self.hidden_dim)
-        self.key = nn.Linear(in_features=self.hidden_dim, out_features=self.hidden_dim)
-        self.value = nn.Linear(in_features=self.hidden_dim, out_features=self.hidden_dim)
-
-        self.attn = nn.MultiheadAttention(embed_dim=self.hidden_dim, num_heads=self.args.n_heads)
-
-        self.ffn1 = nn.Linear(in_features=self.hidden_dim, out_features=self.hidden_dim)
-        self.ffn2 = nn.Linear(in_features=self.hidden_dim, out_features=self.hidden_dim)   
-
-        if self.args.layer_norm:
-            self.ln1 = nn.LayerNorm(self.hidden_dim)
-            self.ln2 = nn.LayerNorm(self.hidden_dim)
-
-
-    def forward(self, embed, mask):
-        q = self.query(embed).permute(1, 0, 2)
-        k = self.key(embed).permute(1, 0, 2)
-        v = self.value(embed).permute(1, 0, 2)
-
-        ## attention
-        out, _ = self.attn(q, k, v, attn_mask=mask)
-        
-        ## residual + layer norm
-        out = out.permute(1, 0, 2)
-        out = embed + out
-        
-        if self.args.layer_norm:
-            out = self.ln1(out)
-
-        ## feed forward network
-        out = self.ffn1(out)
-        out = F.relu(out)
-        out = self.ffn2(out)
-
-        ## residual + layer norm
-        out = embed + out
-
-        if self.args.layer_norm:
-            out = self.ln2(out)
-
-        return out
-
 class TabNet(nn.Module):
     def __init__(self, args):
         super(TabNet, self).__init__()

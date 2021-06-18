@@ -70,7 +70,7 @@ def parse_args(mode='train'):
 
     # Pseudo Labeling
     parser.add_argument('--use_pseudo', default=False, type=bool, help='Using Pseudo labeling')
-    parser.add_argument('--pseudo_label_file', default='/opt/ml/input/data/train_dataset/pseudo_label_file.csv', type=str, help='file path for pseudo labeling')
+    parser.add_argument('--pseudo_label_file', default='', type=str, help='file path for pseudo labeling')
 
     # Finetuning
     parser.add_argument('--use_finetune', default=False, type=bool, help='Using Fine Tuning')

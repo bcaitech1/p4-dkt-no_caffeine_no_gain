@@ -48,8 +48,6 @@ def tabnet_run(args, train_data, valid_data, test_data):
     valid_data.pop('answerCode')
     x_v = valid_data.values
     
-    print(x_t.dtype)
-    
     if args.tabnet_pretrain:
         model = get_tabnet_model(args)
         pre_model, model = model.forward()
@@ -114,6 +112,7 @@ def run(args, train_data, valid_data, test_data):
 
         pseudo_train_data = update_train_data(pseudo_labels, train_data, test_data)
         train_data = pseudo_train_data
+        
     print(f"# of train data : {len(train_data)}")
     print(f"# of valid data : {len(valid_data)}")
     print()

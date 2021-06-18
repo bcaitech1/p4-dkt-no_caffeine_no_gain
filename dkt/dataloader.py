@@ -109,23 +109,16 @@ class Preprocess:
             main_df[col]= main_df[col].astype(str)
             trans = le.transform(main_df[col])
             main_df[col] = trans
-            
-
-        def convert_time(s):
-            timestamp = time.mktime(datetime.strptime(s, '%Y-%m-%d %H:%M:%S').timetuple())
-            return int(timestamp) 
-
-        main_df['Timestamp'] = main_df['Timestamp'].apply(convert_time)
         
         return main_df
 
     def __feature_engineering(self, df):
 
         self.args.USERID_COLUMN = ['userID']
+        self.args.USE_COLUMN = ['elapsed', 'time_bin', 'classification', 'paperNum', 'problemNum', 'user_total_acc', 'test_acc', 'assessment_acc', 'tag_acc', 'past_correct', 'past_content_count', 'correct_per_hour', 'same_tag', 'cont_tag']
+        self.args.EXCLUDE_COLUMN = ['assessmentItemID', 'testId', 'Timestamp', 'KnowledgeTag',  'item', 'item_order', 'user_total_correct_cnt', 'user_total_ans_cnt',  'test_size', 'retest', 'user_test_ans_cnt', 'user_test_correct_cnt', 'user_acc', 'test_mean', 'test_sum', 'ItemID_mean', 'ItemID_sum','tag_mean', 'tag_sum', 'hours', 'time', 'correct_shift_-2', 'correct_shift_-1', 'correct_shift_1', 'correct_shift_2', 'total_used_time', 'shift',  'future_correct', 'past_content_correct', 'past_count', 'average_correct', 'average_content_correct', 'mean_time', 'time_median', 'hour',  'hour_mode', 'is_night', 'normalized_time', 'relative_time', 'time_cut', 'time_qcut']
         self.args.ANSWER_COLUMN = ['answerCode']
-        self.args.USE_COLUMN = ['assessmentItemID', 'testId', 'Timestamp', 'KnowledgeTag', 'elapsed', 'item', 'item_order', 'user_total_correct_cnt', 'user_total_ans_cnt', 'user_total_acc', 'test_size', 'retest', 'user_test_ans_cnt', 'user_test_correct_cnt', 'user_acc', 'test_mean', 'test_sum', 'ItemID_mean', 'ItemID_sum', 'tag_mean', 'tag_sum', 'classification', 'paperNum', 'problemNum', 'hours', 'time_bin', 'tag_acc', 'assessment_acc', 'test_acc', 'time', 'correct_shift_-2', 'correct_shift_-1', 'correct_shift_1', 'correct_shift_2', 'total_used_time', 'shift', 'past_correct', 'future_correct', 'past_content_correct', 'past_count', 'average_correct', 'past_content_count', 'average_content_correct', 'mean_time', 'assessmentItemID_mean', 'assessmentItemID_std', 'answerCode_mean', 'answerCode_std', 'KnowledgeTag_mean', 'KnowledgeTag_std', 'elapsed_mean', 'elapsed_std', 'item_mean', 'item_std', 'item_order_mean', 'item_order_std', 'user_total_correct_cnt_mean', 'user_total_correct_cnt_std', 'user_total_ans_cnt_mean', 'user_total_ans_cnt_std', 'user_total_acc_mean', 'user_total_acc_std', 'test_size_mean', 'test_size_std', 'retest_mean', 'retest_std', 'user_test_ans_cnt_mean', 'user_test_ans_cnt_std', 'user_test_correct_cnt_mean', 'user_test_correct_cnt_std', 'user_acc_mean', 'user_acc_std', 'test_mean_mean', 'test_mean_std', 'test_sum_mean', 'test_sum_std', 'ItemID_mean_mean', 'ItemID_mean_std', 'ItemID_sum_mean', 'ItemID_sum_std', 'tag_mean_mean', 'tag_mean_std', 'tag_sum_mean', 'tag_sum_std', 'classification_mean', 'classification_std', 'paperNum_mean', 'paperNum_std', 'problemNum_mean', 'problemNum_std', 'hours_mean', 'hours_std', 'time_bin_mean', 'time_bin_std', 'tag_acc_mean', 'tag_acc_std', 'assessment_acc_mean', 'assessment_acc_std', 'test_acc_mean', 'test_acc_std', 'time_mean', 'time_std', 'correct_shift_-2_mean', 'correct_shift_-2_std', 'correct_shift_-1_mean', 'correct_shift_-1_std', 'correct_shift_1_mean', 'correct_shift_1_std', 'correct_shift_2_mean', 'correct_shift_2_std', 'total_used_time_mean', 'total_used_time_std', 'shift_mean', 'shift_std', 'past_correct_mean', 'past_correct_std', 'future_correct_mean', 'future_correct_std', 'past_content_correct_mean', 'past_content_correct_std', 'past_count_mean', 'past_count_std', 'average_correct_mean', 'average_correct_std', 'past_content_count_mean', 'past_content_count_std', 'average_content_correct_mean', 'average_content_correct_std', 'mean_time_mean', 'mean_time_std', 'time_median', 'hour', 'correct_per_hour', 'hour_mode', 'is_night', 'normalized_time', 'relative_time', 'time_cut', 'time_qcut', 'same_tag', 'cont_tag', ]
-        self.args.EXCLUDE_COLUMN = []
-
+        
         assert df.head().shape[1] == len(self.args.USERID_COLUMN) + len(self.args.ANSWER_COLUMN) + len(
             self.args.USE_COLUMN) + len(self.args.EXCLUDE_COLUMN)
 
