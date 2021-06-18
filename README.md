@@ -1,7 +1,16 @@
+# 📝 No Caffeine No Gain
+<br>
+
+**프로젝트 기간 : 2021.05.31 ~ 2021.06.15**
+<br>
+<br>
+**프로젝트 내용 : Deep Knowledge Tracing**
+
+<br>
+
 ## [목차]
 
-* [\[Dialogue State Tracking 소개\]](#dialogue-state-tracking-소개)
-- [\[Deep Knowledge Tracing 소개]\](#deep-knowledge-tracing-소개)
+- [\[Deep Knowledge Tracing 소개\]](#deep-knowledge-tracing-소개)
 - [[Installation]](#installation)
   * [Dependencies](#dependencies)
 - [[Usage]](#usage)
@@ -25,8 +34,6 @@
 - [[Reference]](#reference)
   * [Papers](#papers)
   * [Dataset](#dataset-1)
-
-<small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
 
 <br>
 <br>
