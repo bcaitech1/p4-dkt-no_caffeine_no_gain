@@ -112,7 +112,7 @@ def run(args, train_data, valid_data, test_data):
 
         pseudo_train_data = update_train_data(pseudo_labels, train_data, test_data)
         train_data = pseudo_train_data
-        
+
     print(f"# of train data : {len(train_data)}")
     print(f"# of valid data : {len(valid_data)}")
     print()
@@ -135,10 +135,8 @@ def run(args, train_data, valid_data, test_data):
     print(f"\n{model_dir}/exp_config.json is saved!\n")
             
     model = get_model(args)
-    # print(f"model : {model}")
     if args.use_finetune:
         load_state = torch.load(args.trained_model)
-        # print(f"load_state : {load_state}")
         model.load_state_dict(load_state['state_dict'], strict=True)
         print(f"{args.trained_model} is loaded!")
 
