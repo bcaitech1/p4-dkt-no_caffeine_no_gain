@@ -325,7 +325,7 @@ code
 - Kaggle Riiid AIEd Challenge 2020의 [Host가 제시한 solution](https://www.kaggle.com/c/riiid-test-answer-prediction/discussion/193250) 입니다.
 - Transformer와 비슷한 구조의 모델로 Encoder와 Decoder를 가지고 있습니다.
 - 인코더는 feature 임베딩 스트림에 self-attention 레이어를 적용하고 디코더에서 self-attention 레이어와 인코더-디코더 attention 레이어를 응답 임베딩과 인코더의 출력 스트림에 번갈아 적용하는 구조입니다.
-- **Paper Review : [[**Saint 모델 분석]](https://www.notion.so/Saint-507d13692825492ba05128f4548c2da7)
+- **Paper Review** : [[Saint 모델 분석]](https://www.notion.so/Saint-507d13692825492ba05128f4548c2da7)
 - **구현**
 
     ```
