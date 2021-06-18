@@ -30,7 +30,7 @@
 - [[Feature]](#feature)
 - [[Contributors]](#contributors)
 - [[Collaborative Works]](#collaborative-works)
-  * [📝 Notion](#📝-notion)
+  * [📝 Notion](#-notion)
 - [[Reference]](#reference)
   * [Papers](#papers)
   * [Dataset](#dataset-1)
