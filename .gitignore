@@ -20,4 +20,4 @@ __pycache__
 .idea
 
 # pycaret log
-.logs.log
+*.log
