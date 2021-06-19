@@ -130,7 +130,7 @@ $ p4-dkt-no_caffeine_no_gain# python inference.py --model_name "학습한 모델
 
 train 과 inference 에서 필요한 argument 입니다.
 
-```python
+```plain-text
 # Basic
 --model: model type (default:'lstm')
 --scheduler: scheduler type (default:'plateau')
@@ -465,7 +465,7 @@ code
 
 ## [Feature]
 
-```python
+```plain-text
 elapsed: 유저가 문제를 푸는데에 소요한 시간
 
 time_bin: 문제를 푼 시간대(아침, 점심, 저녁, 새벽)
