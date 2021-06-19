@@ -326,6 +326,14 @@ code
 
 
 - tabular data에서 좋은 성능을 보이는 Machine Learning 모델입니다.
+- **구현**
+
+    ```
+    model.py
+    ├── class LGBM
+    │   ├── init()
+    └── └── fit() : return trained model
+    ```
 
 <br>
 <br>
