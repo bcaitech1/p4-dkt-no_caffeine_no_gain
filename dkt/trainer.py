@@ -10,9 +10,11 @@ from .optimizer import get_optimizer
 from .scheduler import get_scheduler
 from .criterion import get_criterion
 from .metric import get_metric
-from .model import LSTM, LSTMATTN, Bert, LastQuery, TfixupBert, Saint, TabNet
+from .model import LSTM, LSTMATTN, Bert, LastQuery, TfixupBert, Saint, TabNet, LGBM
 from pytorch_tabnet.tab_model import TabNetClassifier
 from pytorch_tabnet.pretraining import TabNetPretrainer
+from pycaret.classification import *
+from pycaret.utils import check_metric
 from datetime import timedelta, timezone, datetime
 
 import wandb
@@ -102,7 +104,44 @@ def tabnet_run(args, train_data, valid_data, test_data):
                     'valid_full_logloss' : model.history['valid_logloss'][idx],
                 })
 
-            
+def lgbm_run(args):
+    print(args)
+
+    train = pd.read_csv(os.path.join(args.data_dir, args.train_file_name))
+    valid = pd.read_csv(os.path.join(args.data_dir, args.valid_file_name))
+    test = pd.read_csv(os.path.join(args.data_dir, args.test_file_name))
+
+    if args.use_pseudo:
+        pseudo_labels = pd.read_csv(args.pseudo_label_file) # '/opt/ml/p4-dkt-no_caffeine_no_gain/highest.csv'
+        pseudo_labels = pseudo_labels['prediction'].to_numpy()
+        pseudo_labels = np.where(pseudo_labels >= 0.5, 1, 0)
+
+        pseudo_train_data = update_train_data(pseudo_labels, train, test)
+        train = pseudo_train_data
+
+    model_dir = os.path.join(args.model_dir, args.model_name)
+    os.makedirs(model_dir, exist_ok=True)
+    json.dump(
+        vars(args),
+        open(f"{model_dir}/exp_config.json", "w"),
+        indent=2,
+        ensure_ascii=False,
+    )
+    print(f"\n{model_dir}/exp_config.json is saved!\n")
+
+    FEATS = args.ANSWER_COLUMN + args.USE_COLUMN
+
+    X_train = train[args.USE_COLUMN]
+    y_train = train[args.ANSWER_COLUMN]
+
+    X_valid = valid[args.USE_COLUMN]
+    y_valid = valid[args.ANSWER_COLUMN]
+
+    model = LGBM(args)
+    model, log = model.fit(X_train, y_train, X_valid, y_valid, FEATS)
+    save_model(model, f"{model_dir}/model")
+    if args.use_wandb:
+        wandb.log({log})
 
 def run(args, train_data, valid_data, test_data):
     if args.use_pseudo:
@@ -283,8 +322,8 @@ def tabnet_inference(args, test_data):
     
     prediction_name = datetime.now(timezone(timedelta(hours=9))).strftime('%m%d_%H%M')
 
-    output_dir = '/opt/ml/p4-dkt-no_caffeine_no_gain/output/'
-    write_path = os.path.join(output_dir, f"{prediction_name}.csv")
+    output_dir = args.output_dir
+    write_path = os.path.join(output_dir, f"{args.model_name}.csv")
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)    
     with open(write_path, 'w', encoding='utf8') as w:
@@ -293,6 +332,31 @@ def tabnet_inference(args, test_data):
         for id, p in enumerate(preds):
             w.write('{},{}\n'.format(id,p))
 
+def lgbm_inference(args):
+    from pycaret.classification import load_model as py_load_model
+
+    model_dir = os.path.join(args.model_dir, args.model_name)
+    loaded_clf = py_load_model(f"{model_dir}/model")
+
+    test_data = pd.read_csv(os.path.join(args.data_dir, args.test_file_name))
+    test = test_data[test_data['userID'] != test_data['userID'].shift(-1)]
+
+    FEATS = args.ANSWER_COLUMN + args.USE_COLUMN
+    
+    prediction = predict_model(loaded_clf, data=test[FEATS], raw_score=True)
+    preds = prediction.Score_1.values
+
+    prediction_name = datetime.now(timezone(timedelta(hours=9))).strftime('%m%d_%H%M')
+
+    output_dir = args.output_dir
+    write_path = os.path.join(output_dir, f"{args.model_name}.csv")
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)    
+    with open(write_path, 'w', encoding='utf8') as w:
+        print("writing prediction : {}".format(write_path))
+        w.write("id,prediction\n")
+        for id, p in enumerate(preds):
+            w.write('{},{}\n'.format(id,p))
 
 def inference(args, test_data):
     

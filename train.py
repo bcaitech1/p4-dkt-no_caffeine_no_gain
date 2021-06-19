@@ -32,6 +32,8 @@ def main(args):
     
     if args.model == 'tabnet':
         trainer.tabnet_run(args, train_data, valid_data, test_data)
+    elif args.model == 'lgbm':
+        trainer.lgbm_run(args)
     else:
         trainer.run(args, train_data, valid_data, test_data)
     

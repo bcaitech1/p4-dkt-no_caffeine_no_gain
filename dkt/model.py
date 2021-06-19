@@ -3,12 +3,16 @@ import torch.optim
 import torch.nn as nn
 import torch.nn.functional as F 
 import numpy as np
+import pandas as pd
 import copy
 import math
 import re
 import os
 from pytorch_tabnet.tab_model import TabNetClassifier
 from pytorch_tabnet.pretraining import TabNetPretrainer
+from pycaret.classification import *
+from pycaret.utils import check_metric
+import random
 
 try:
     from transformers.modeling_bert import BertConfig, BertEncoder, BertModel    
@@ -768,4 +772,26 @@ class TabNet(nn.Module):
         if self.args.tabnet_pretrain:
             return self.unsupervised_model, self.clf
         return self.clf
-            
+
+
+class LGBM(nn.Module):
+    def __init__(self, args):
+        self.args = args
+        self.device = args.device
+        
+    def fit(self, X_train, y_train, X_valid, y_valid, FEATS, categorical_features=[],numeric_features=[],seed=47):
+
+        X_trn = X_train.merge(y_train, on=X_train.index)
+        X_val = X_valid.merge(y_valid, on=X_valid.index)
+
+        random.seed(seed)
+        settings = setup(data=X_trn[FEATS], target='answerCode', categorical_features=categorical_features, numeric_features=numeric_features, silent=True)
+        
+        lgbm = create_model('lightgbm', sort='AUC')
+        tuned_lgbm = tune_model(lgbm, optimize='AUC', fold=10)
+        final_lgbm = finalize_model(tuned_lgbm)
+
+        log = []
+        prediction = predict_model(final_lgbm, data=X_val[FEATS], raw_score=True)
+        log.append(f"{check_metric(prediction['answerCode'], prediction['Label'], metric='Accuracy')} ,{check_metric(prediction['answerCode'], prediction['Score_1'], metric='AUC')}")
+        return final_lgbm, log
