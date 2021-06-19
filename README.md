@@ -1,7 +1,17 @@
+# 📝 No Caffeine No Gain
+
+<br>
+
+**프로젝트 기간 : 2021.05.31 ~ 2021.06.15**
+<br>
+
+**프로젝트 주제 : Deep Knowledge Tracing**
+<br>
+<br>
+
 ## [목차]
 
-* [\[Dialogue State Tracking 소개\]](#dialogue-state-tracking-소개)
-- [\[Deep Knowledge Tracing 소개]\](#deep-knowledge-tracing-소개)
+- [\[Deep Knowledge Tracing 소개\]](#deep-knowledge-tracing-소개)
 - [[Installation]](#installation)
   * [Dependencies](#dependencies)
 - [[Usage]](#usage)
@@ -21,12 +31,11 @@
 - [[Feature]](#feature)
 - [[Contributors]](#contributors)
 - [[Collaborative Works]](#collaborative-works)
-  * [📝 Notion](#notion)
+  * [📝 Notion](#-notion)
 - [[Reference]](#reference)
   * [Papers](#papers)
   * [Dataset](#dataset-1)
 
-<small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
 
 <br>
 <br>
@@ -81,6 +90,8 @@ $ p4-dkt-no_caffeine_no_gain# python make_elapsed.py
 $ p4-dkt-no_caffeine_no_gain# python make_fixed_data.py
 ```
 
+<br>
+
 ### Train
 
 모델을 학습하기 위해서는 `train.py` 를 실행시킵니다.
@@ -101,6 +112,8 @@ $ p4-dkt-no_caffeine_no_gain# python train.py
 - **LSTMATTN**
 - **LSTM**
 
+<br>
+
 ### Inference
 
 학습된 모델로 추론하기 위해서는 `inference.py` 를 실행시킵니다.
@@ -110,6 +123,8 @@ $ p4-dkt-no_caffeine_no_gain# python train.py
 ```bash
 $ p4-dkt-no_caffeine_no_gain# python inference.py --model_name "학습한 모델 폴더 이름" --model_epoch "사용하고픈 모델의 epoch"
 ```
+
+<br>
 
 ### Arguments
 
@@ -183,6 +198,9 @@ train 과 inference 에서 필요한 argument 입니다.
 # wandb
 --use_wandb: if you want to use wandb (default:True)
 ```
+
+<br>
+<br>
 
 ## [File Structure]
 
@@ -294,7 +312,6 @@ code
     ├── args.n_heads(default : 2)
     ├── args.is_decoder(default : True)
     └── args.hidden_dim(default : 64)
-    ****
     ```
 
 <br>
@@ -303,7 +320,7 @@ code
 ### LGBM
 
 <div align='center'>
-    <img src='https://user-images.githubusercontent.com/37643891/122541790-03dcac00-d065-11eb-9464-3f4c890bccda.png' height='250px '/>
+    <img src='https://user-images.githubusercontent.com/37643891/122541790-03dcac00-d065-11eb-9464-3f4c890bccda.png' height='200px '/>
 </div>
 <br/>
 
@@ -386,7 +403,7 @@ code
 - tabular data에서 ML모델보다 더 우수한 성능을 보이는 Deep-learning model입니다.
 - data에서 Sparse instance-wise feature selection을 사용하여 자체적으로 중요한 feature 선별해낸 후 학습하는 방식을 사용하며, feature 선별시 non-linear한 processing을 사용하여 learning capacity를 향상시킵니다.
 - Sequential한 multi-step architecture를  가지고있으며, feature masking으로 Unsupervised 학습도 가능합니다.
-- **Paper Review : [[Tabnet 논문 리뷰]](https://www.notion.so/Tabnet-298eca48c26a4486a4df8e1586cba2ed)**
+- **Paper Review :** [[Tabnet 논문 리뷰]](https://www.notion.so/Tabnet-298eca48c26a4486a4df8e1586cba2ed)
 
 - **구현**
 
@@ -410,16 +427,15 @@ code
     args.py
     ├── args.tabnet_pretrain(default : False)
     ├── args.use_test_to_train(default : False)
-    ****├── args.tabnet_scheduler(default:'steplr')
-    ****├── args.tabnet_optimizer(default:'adam')
-    ****├── args.tabnet_lr(default:2e-2)
-    ****├── args.tabnet_batchsize(default:16384)
-    ****├── args.tabnet_n_step(default:5)
-    ****├── args.tabnet_gamma(default:1.7)
+        ├── args.tabnet_scheduler(default:'steplr')
+        ├── args.tabnet_optimizer(default:'adam')
+        ├── args.tabnet_lr(default:2e-2)
+        ├── args.tabnet_batchsize(default:16384)
+        ├── args.tabnet_n_step(default:5)
+        ├── args.tabnet_gamma(default:1.7)
     ├── args.tabnet_mask_type(default:'saprsemax')
     ├── args.tabnet_virtual_batchsize(default:256)
     └── args.tabnet_pretraining_ratio(default:0.8)
-    ****
     ```
 
 <br>
@@ -429,7 +445,7 @@ code
 데이터는 아래와 같은 형태이며, 한 행은 한 사용자가 한 문항을 풀었을 때의 정보와 그 문항을 맞췄는지에 대한 정보가 담겨져 있습니다. 데이터는 모두 Timestamp 기준으로 정렬되어 있습니다.
 
 <div align='center'>
-    <img src='https://user-images.githubusercontent.com/37643891/122542042-3d151c00-d065-11eb-8278-be19e177037e.png' height='250px '/>
+    <img src='https://user-images.githubusercontent.com/37643891/122542042-3d151c00-d065-11eb-8278-be19e177037e.png' weight=80%/>
 </div>
 <br/>
 
@@ -439,7 +455,7 @@ code
 - `testId` 시험지의 고유번호입니다. 문항과 시험지의 관계는 아래 그림을 참고하여 이해하시면 됩니다. 총 1,537개의 고유한 시험지가 있습니다.
 
 <div align='center'>
-    <img src='https://user-images.githubusercontent.com/37643891/122542102-49997480-d065-11eb-9957-c84bc1ab77d5.png' height='250px '/>
+    <img src='https://user-images.githubusercontent.com/37643891/122542102-49997480-d065-11eb-9957-c84bc1ab77d5.png' height='150px'/>
 </div>
 <br/>
 
@@ -502,54 +518,62 @@ etc...
 
 **Gitflow 브랜치 전략**
 
-→ 92개의 Commits, 26개의 Pull Requests
+`→ 92개의 Commits, 26개의 Pull Requests`
 
 <div align='center'>
     <img src='https://user-images.githubusercontent.com/37643891/122542173-59b15400-d065-11eb-9c49-56c091e4fc9f.gif' height='250px '/>
 </div>
 <br/>
+<br>
 
 
 **Github issues & projects 로 일정 관리**
 
-→ 28개의 Issues
+`→ 28개의 Issues`
 
 <div align='center'>
     <img src='https://user-images.githubusercontent.com/37643891/122542239-6e8de780-d065-11eb-9f6f-821372f4bbbf.gif' height='250px '/>
 </div>
 <br/>
+<br>
 
 
-→ Modeling Project 에서 관리
+`→ Modeling Project 에서 관리`
 
 <div align='center'>
     <img src='https://user-images.githubusercontent.com/37643891/122542265-751c5f00-d065-11eb-8465-97d2a6fbfebf.gif' height='250px '/>
 </div>
 <br/>
+<br>
 
 
 **Notion 실험노트로 실험 공유**
 
-→ 39개의 실험노트
+`→ 39개의 실험노트`
 
 <div align='center'>
     <img src='https://user-images.githubusercontent.com/37643891/122542297-81082100-d065-11eb-96de-713440c9544b.gif' height='250px '/>
 </div>
 <br/>
+<br>
 
 
-Notion 제출기록으로 제출 내역 공유
-→ 155개의 제출기록
+**Notion 제출기록으로 제출 내역 공유**
+
+`→ 155개의 제출기록`
 
 <div align='center'>
     <img src='https://user-images.githubusercontent.com/37643891/122542323-86fe0200-d065-11eb-8949-8aa146157d73.gif' height='250px '/>
 </div>
+<br>
+<br>
 
 
-### 📝 Notion
+## 📝 Notion
 
+피어들의 `Ground Rule`, `실험노트`, `피어세션` 등 한달 간의 행보를 확인하시려면 다음 링크를 클릭하세요.
 
-[DKT-10조-No_Caffeine_No_Gain](https://www.notion.so/DKT-10-No_Caffeine_No_Gain-dcc1e3823ec849578ab5ae0bcf117145)
+* **LINK :** [DKT-10조-No_Caffeine_No_Gain](https://www.notion.so/DKT-10-No_Caffeine_No_Gain-dcc1e3823ec849578ab5ae0bcf117145)
 
 
 <br>
@@ -566,7 +590,7 @@ Notion 제출기록으로 제출 내역 공유
 - [Improving Transformer Optimization Through Better Initialization (Huang et al., ICML 2020)](https://www.cs.toronto.edu/~mvolkovs/ICML2020_tfixup.pdf)
 
 ### Dataset
-- i-Scream edu Dataset
+- **i-Scream edu Dataset**
 <div align='center'>
-    <img src='https://user-images.githubusercontent.com/37643891/122542423-9ed58600-d065-11eb-9c4e-8c8efa83de80.png' height='250px '/>
+    <img src='https://user-images.githubusercontent.com/37643891/122542423-9ed58600-d065-11eb-9c4e-8c8efa83de80.png' height='120px '/>
 </div>
