@@ -71,7 +71,11 @@ def parse_args(mode='train'):
     # Pseudo Labeling
     parser.add_argument('--use_pseudo', default=False, type=bool, help='Using Pseudo labeling')
     parser.add_argument('--pseudo_label_file', default='', type=str, help='file path for pseudo labeling')
-    
+
+    # Finetuning
+    parser.add_argument('--use_finetune', default=False, type=bool, help='Using Fine Tuning')
+    parser.add_argument('--trained_model', default='/opt/ml/code/p4-dkt-no_caffeine_no_gain/models/re_pse_Bert_40_5/model_epoch7.pt', type=str, help='pretrained model path')
+
     # log
     parser.add_argument('--log_steps', default=50, type=int, help='print log per n steps')
 

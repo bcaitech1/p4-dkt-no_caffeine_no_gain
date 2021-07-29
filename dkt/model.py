@@ -3,20 +3,21 @@ import torch.optim
 import torch.nn as nn
 import torch.nn.functional as F 
 import numpy as np
+import pandas as pd
 import copy
 import math
 import re
 import os
 from pytorch_tabnet.tab_model import TabNetClassifier
 from pytorch_tabnet.pretraining import TabNetPretrainer
+from pycaret.classification import *
+from pycaret.utils import check_metric
+import random
 
 try:
     from transformers.modeling_bert import BertConfig, BertEncoder, BertModel    
 except:
     from transformers.models.bert.modeling_bert import BertConfig, BertEncoder, BertModel    
-
-
-
 
 class LSTM(nn.Module):
 
@@ -35,11 +36,6 @@ class LSTM(nn.Module):
         self.embedding_features = nn.ModuleList([])
         for value in self.args.n_embedding_layers:
             self.embedding_features.append(nn.Embedding(value + 1, self.hidden_dim // self.args.dim_div))
-
-        #self.embedding_classification = nn.Embedding(self.args.n_class + 1, self.hidden_dim//3)
-        #self.embedding_paperNum = nn.Embedding(self.args.n_paper + 1, self.hidden_dim//3)
-        #self.embedding_problemNum = nn.Embedding(self.args.n_problem + 1, self.hidden_dim//3)
-        #self.embedding_tag = nn.Embedding(self.args.n_tag + 1, self.hidden_dim//3)
 
         # embedding combination projection
         # +1은 interaction
@@ -84,10 +80,6 @@ class LSTM(nn.Module):
         for _input, _embedding_feature in zip(input[:-4], self.embedding_features):
             value = _embedding_feature(_input)
             embed_features.append(value)
-        #embed_classification = self.embedding_classification(classification)
-        #embed_paperNum = self.embedding_paperNum(paperNum)
-        #embed_problemNum = self.embedding_problemNum(problemNum)
-        #embed_tag = self.embedding_tag(tag)
 
         embed_features = [embed_interaction] + embed_features
 
@@ -418,7 +410,6 @@ class LastQuery(nn.Module):
 
 
     def forward(self, input):
-#         test, question, tag, _, mask, interaction, index = input
         _, mask, interaction, index = input[-4:]
         batch_size = interaction.size(0)
         seq_len = interaction.size(1)
@@ -733,58 +724,6 @@ class TfixupBert(nn.Module):
         return preds
 
 
-class EncoderLayer(nn.Module):
-    def __init__(self, args):
-        super(EncoderLayer, self).__init__()
-        self.args = args
-        self.device = args.device
-
-        # Defining some parameters
-        self.hidden_dim = self.args.hidden_dim
-        self.n_layers = self.args.n_layers
-
-        self.query = nn.Linear(in_features=self.hidden_dim, out_features=self.hidden_dim)
-        self.key = nn.Linear(in_features=self.hidden_dim, out_features=self.hidden_dim)
-        self.value = nn.Linear(in_features=self.hidden_dim, out_features=self.hidden_dim)
-
-        self.attn = nn.MultiheadAttention(embed_dim=self.hidden_dim, num_heads=self.args.n_heads)
-
-        self.ffn1 = nn.Linear(in_features=self.hidden_dim, out_features=self.hidden_dim)
-        self.ffn2 = nn.Linear(in_features=self.hidden_dim, out_features=self.hidden_dim)   
-
-        if self.args.layer_norm:
-            self.ln1 = nn.LayerNorm(self.hidden_dim)
-            self.ln2 = nn.LayerNorm(self.hidden_dim)
-
-
-    def forward(self, embed, mask):
-        q = self.query(embed).permute(1, 0, 2)
-        k = self.key(embed).permute(1, 0, 2)
-        v = self.value(embed).permute(1, 0, 2)
-
-        ## attention
-        out, _ = self.attn(q, k, v, attn_mask=mask)
-        
-        ## residual + layer norm
-        out = out.permute(1, 0, 2)
-        out = embed + out
-        
-        if self.args.layer_norm:
-            out = self.ln1(out)
-
-        ## feed forward network
-        out = self.ffn1(out)
-        out = F.relu(out)
-        out = self.ffn2(out)
-
-        ## residual + layer norm
-        out = embed + out
-
-        if self.args.layer_norm:
-            out = self.ln2(out)
-
-        return out
-
 class TabNet(nn.Module):
     def __init__(self, args):
         super(TabNet, self).__init__()
@@ -833,4 +772,26 @@ class TabNet(nn.Module):
         if self.args.tabnet_pretrain:
             return self.unsupervised_model, self.clf
         return self.clf
-            
+
+
+class LGBM(nn.Module):
+    def __init__(self, args):
+        self.args = args
+        self.device = args.device
+        
+    def fit(self, X_train, y_train, X_valid, y_valid, FEATS, categorical_features=[],numeric_features=[],seed=47):
+
+        X_trn = X_train.merge(y_train, on=X_train.index)
+        X_val = X_valid.merge(y_valid, on=X_valid.index)
+
+        random.seed(seed)
+        settings = setup(data=X_trn[FEATS], target='answerCode', categorical_features=categorical_features, numeric_features=numeric_features, silent=True)
+        
+        lgbm = create_model('lightgbm', sort='AUC')
+        tuned_lgbm = tune_model(lgbm, optimize='AUC', fold=10)
+        final_lgbm = finalize_model(tuned_lgbm)
+
+        log = []
+        prediction = predict_model(final_lgbm, data=X_val[FEATS], raw_score=True)
+        log.append(f"{check_metric(prediction['answerCode'], prediction['Label'], metric='Accuracy')} ,{check_metric(prediction['answerCode'], prediction['Score_1'], metric='AUC')}")
+        return final_lgbm, log
